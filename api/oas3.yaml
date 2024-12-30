@@ -1,0 +1,1938 @@
+openapi: 3.0.3
+info:
+  title: Core Service API
+  description: A simple API to manage tasks.
+  version: 1.0.0
+
+servers:
+  - url: "https://api.example.com"
+
+components:
+  ######################################################################
+  # SECURITY SCHEMES
+  ######################################################################
+  securitySchemes:
+    public:
+      type: openIdConnect
+      openIdConnectUrl: https://example.com/public/.well-known/openid-configuration
+    private:
+      type: openIdConnect
+      openIdConnectUrl: https://example.com/private/.well-known/openid-configuration
+
+  ######################################################################
+  # REUSABLE ERROR RESPONSES (Zalando Problem)
+  ######################################################################
+  responses:
+    Problem400:
+      description: Bad Request
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+    Problem401:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+    Problem403:
+      description: Forbidden
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+    Problem404:
+      description: Not Found
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+    Problem409:
+      description: Conflict
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+    Problem422:
+      description: Unprocessable Entity
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+    Problem500:
+      description: Internal Server Error
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+    Problem503:
+      description: Service Unavailable
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+
+  ######################################################################
+  # SCHEMAS
+  ######################################################################
+  schemas:
+
+    ###########################################################
+    # ZALANDO BASE PAGINATION SCHEMA
+    ###########################################################
+    ResponsePage:
+      type: object
+      required:
+        - items
+      properties:
+        self:
+          description: Pagination link/cursor pointing to the current page.
+          type: string
+          format: uri
+        first:
+          description: Pagination link/cursor pointing to the first page.
+          type: string
+          format: uri
+        prev:
+          description: Pagination link/cursor pointing to the previous page.
+          type: string
+          format: uri
+        next:
+          description: Pagination link/cursor pointing to the next page.
+          type: string
+          format: uri
+        last:
+          description: Pagination link/cursor pointing to the last page.
+          type: string
+          format: uri
+        query:
+          description: Object containing the query filters applied to the collection resource.
+          type: object
+          properties:
+            # Example filter fields, adjust as needed
+            q:
+              type: string
+              description: "Search query string."
+        items:
+          description: Array of collection items.
+          type: array
+          items: {}
+
+    ###########################################################
+    # MONEY
+    ###########################################################
+    Money:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: float
+          description: "Monetary value."
+        currency:
+          type: string
+          description: "Currency code in ISO-4217 format (3 letters)."
+
+    ###########################################################
+    # CONTACT
+    ###########################################################
+    ContactKind:
+      type: string
+      description: "Allowed values: TEL, MOBILE, EMAIL."
+      enum: ["TEL", "MOBILE", "EMAIL"]
+
+    ContactType:
+      type: string
+      description: "Allowed values: WORK, HOME."
+      enum: ["WORK", "HOME"]
+
+    Contact:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Identifier of the contact."
+        value:
+          type: string
+          description: "Actual contact value (e.g., phone number or email)."
+        kind:
+          $ref: '#/components/schemas/ContactKind'
+        type:
+          $ref: '#/components/schemas/ContactType'
+        is_verified:
+          type: boolean
+          description: "Whether the contact is verified."
+        is_authorized:
+          type: boolean
+          description: "Whether the contact is authorized."
+
+    CreateContactRequest:
+      type: object
+      description: Schema for creating a new contact for the user.
+      required:
+        - value
+        - kind
+        - type
+      properties:
+        value:
+          type: string
+          description: "The contact value (e.g., phone number or email address)."
+        kind:
+           $ref: '#/components/schemas/ContactKind'
+        type:
+           $ref: '#/components/schemas/ContactType'
+    GetSubscriptionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Subscription ID."
+        name:
+          type: string
+          description: "Subscription name."
+        description:
+          type: string
+          description: "Subscription description."
+        max_number_of_tasks:
+          type: integer
+          description: "Maximum number of tasks allowed."
+        thumbnail:
+          type: string
+          description: "URL of the subscription thumbnail."
+        started_at:
+          type: string
+          format: date-time
+          description: "Start datetime of the subscription."
+        finishes_at:
+          type: string
+          format: date-time
+          description: "End datetime of the subscription."
+
+    ###########################################################
+    # USERS
+    ###########################################################
+    CreateUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          description: "Unique username of the user."
+        first_name:
+          type: string
+          description: "User's first name."
+        last_name:
+          type: string
+          description: "User's last name."
+        contact:
+          $ref: '#/components/schemas/CreateContactRequest'
+        lives_in:
+          type: string
+          description: "City or region where user lives."
+        birthdate:
+          type: string
+          format: date
+          description: "User's birth date (YYYY-MM-DD)."
+
+    UpdateUserByIdRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          description: "User's first name."
+        last_name:
+          type: string
+          description: "User's last name."
+        lives_in:
+          type: string
+          description: "City or region where the user lives."
+        birthdate:
+          type: string
+          format: date
+          description: "User's birth date (YYYY-MM-DD)."
+
+    GetUseByIdResponse:
+      type: object
+      properties:
+        first_name:
+          type: string
+          description: "User's first name."
+        last_name:
+          type: string
+          description: "User's last name."
+        lives_in:
+          type: string
+          description: "City or region where the user lives."
+        birthdate:
+          type: string
+          format: date
+          description: "User's birth date."
+        Subscription:
+          $ref: '#/components/schemas/GetSubscriptionResponse'
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+
+    ###########################################################
+    # OFFERS
+    ###########################################################
+    GetOfferResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Offer ID."
+        name:
+          type: string
+          description: "Offer name."
+        description:
+          type: string
+          description: "Offer description."
+        max_number_of_tasks:
+          type: integer
+          description: "Maximum number of tasks permitted by this offer."
+        thumbnail:
+          type: string
+          description: "URL of the offer thumbnail."
+        price:
+           $ref: '#/components/schemas/Money'
+
+    ###########################################################
+    # TASKS
+    ###########################################################
+    TaskStatus:
+      type: string
+      description: "Allowed values: TODO, IN_PROGRESS, ON_HOLD, DONE."
+      enum: ["TODO", "IN_PROGRESS", "ON_HOLD", "DONE"]
+
+    CreateTaskRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Name of the task."
+        description:
+          type: string
+          description: "Task description."
+        labels:
+          type: array
+          items:
+            type: string
+          description: "Labels or tags for the task."
+        priority:
+          type: integer
+          description: "Priority level of the task."
+
+    GetListableTask:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Task ID."
+        name:
+          type: string
+          description: "Task name."
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        labels:
+          type: array
+          items:
+            type: string
+          description: "Labels or tags associated with the task."
+        created_at:
+          type: string
+          format: date-time
+          description: "Datetime when the task was created."
+
+    GetTaskResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Task ID."
+        name:
+          type: string
+          description: "Task name."
+        description:
+          type: string
+          description: "Task description."
+        labels:
+          type: array
+          items:
+            type: string
+          description: "Labels associated with the task."
+        created_at:
+          type: string
+          format: date-time
+          description: "Datetime when the task was created."
+        last_modified_at:
+          type: string
+          format: date-time
+          description: "Datetime of the last update to the task."
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        priority:
+          type: integer
+          description: "Priority level of the task."
+
+    UpdateTaskRequest:
+      description: "One of the following partial updates: status, priority, or the same structure as CreateTaskRequest."
+      anyOf:
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/TaskStatus'
+        - $ref: '#/components/schemas/CreateTaskRequest'
+        - type: object
+          properties:
+            priority:
+              type: integer
+              description: "New priority for the task."
+
+    ###########################################################
+    # ADMIN SCHEMAS
+    ###########################################################
+    AdminAPIGetUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Internal user ID."
+        is_authorized:
+          type: boolean
+          description: "Whether the user is authorized."
+        is_enabled:
+          type: boolean
+          description: "Whether the user is enabled."
+        username:
+          type: string
+          description: "Username."
+        first_name:
+          type: string
+          description: "User's first name."
+        last_name:
+          type: string
+          description: "User's last name."
+        lives_in:
+          type: string
+          description: "User's city/region."
+        birthdate:
+          type: string
+          format: date
+          description: "User's birth date."
+
+    AdminAPIGetUserByIdResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Internal user ID."
+        is_authorized:
+          type: boolean
+          description: "Whether the user is authorized."
+        is_enabled:
+          type: boolean
+          description: "Whether the user is enabled."
+        username:
+          type: string
+          description: "Username."
+        first_name:
+          type: string
+          description: "First name."
+        last_name:
+          type: string
+          description: "Last name."
+        lives_in:
+          type: string
+          description: "User's city/region."
+        birthdate:
+          type: string
+          format: date
+          description: "User's birth date."
+        Subscription:
+          $ref: '#/components/schemas/GetSubscriptionResponse'
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+        created_at:
+          type: string
+          format: date-time
+          description: "Datetime when user was created."
+        created_by:
+          type: string
+          description: "Identifier or name of the creator."
+        last_modified_at:
+          type: string
+          format: date-time
+          description: "Datetime of the last update."
+        last_modified_by:
+          type: string
+          description: "Identifier or name of the last modifier."
+
+    AdminAPIUpdateUserByIdRequest:
+      description: "Combines UpdateUserByIdRequest fields plus optional 'is_authorized'."
+      anyOf:
+        - $ref: '#/components/schemas/UpdateUserByIdRequest'
+        - type: object
+          properties:
+            is_authorized:
+              type: boolean
+              description: "Whether the user is authorized."
+
+    AdminAPIGetSubscriptionByIdResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Subscription ID."
+        name:
+          type: string
+          description: "Subscription name."
+        description:
+          type: string
+          description: "Subscription description."
+        max_number_of_tasks:
+          type: integer
+          description: "Maximum tasks."
+        thumbnail:
+          type: string
+          description: "Thumbnail URL."
+        started_at:
+          type: string
+          format: date-time
+          description: "Start datetime."
+        finishes_at:
+          type: string
+          format: date-time
+          description: "Finish datetime."
+        created_at:
+          type: string
+          format: date-time
+          description: "Datetime when the subscription was created."
+        created_by:
+          type: string
+          description: "Creator identifier."
+
+    AdminAPICreateOfferRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "Offer ID."
+        name:
+          type: string
+          description: "Offer name."
+        description:
+          type: string
+          description: "Offer description."
+        max_number_of_tasks:
+          type: integer
+          description: "Maximum tasks for this offer."
+        thumbnail:
+          type: string
+          description: "Thumbnail URL."
+        is_enabled:
+          type: boolean
+          description: "Whether the offer is enabled."
+        expires_at:
+          type: string
+          format: date-time
+          description: "Datetime when the offer expires."
+
+    AdminAPIUpdateOfferByIdRequest:
+      description: "Payload for partial or full offer update, also can update 'is_enabled'."
+      anyOf:
+        - type: object
+          properties:
+            name:
+              type: string
+            description:
+              type: string
+            max_number_of_tasks:
+              type: integer
+            thumbnail:
+              type: string
+            expires_at:
+              type: string
+              format: date-time
+            price:
+              $ref: '#/components/schemas/Money'
+        - type: object
+          properties:
+            is_enabled:
+              type: boolean
+
+    AdminAPIGetOfferByIdResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        max_number_of_tasks:
+          type: integer
+        thumbnail:
+          type: string
+        is_enabled:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        last_modified_at:
+          type: string
+          format: date-time
+        last_modified_by:
+          type: string
+        price:
+           $ref: '#/components/schemas/Money'
+
+    AdminAPIGetListableTaskResponse:
+      allOf:
+        - $ref: '#/components/schemas/GetListableTask'
+        - type: object
+          properties:
+            created_by:
+              type: string
+              description: "Creator identifier."
+            last_modified_by:
+              type: string
+              description: "Last modifier identifier."
+
+    AdminAPIGetTaskByIdResponse:
+      allOf:
+        - $ref: '#/components/schemas/GetTaskResponse'
+        - type: object
+          properties:
+            created_by:
+              type: string
+              description: "Creator identifier."
+            last_modified_by:
+              type: string
+              description: "Last modifier identifier."
+
+    ###########################################################
+    # ZALANDO-STYLE PAGINATION SPECIALIZATIONS
+    ###########################################################
+    ResponsePageOfOffer:
+      allOf:
+        - $ref: '#/components/schemas/ResponsePage'
+        - type: object
+          properties:
+            items:
+              description: "Array of Offer objects."
+              type: array
+              items:
+                $ref: '#/components/schemas/GetOfferResponse'
+
+    ResponsePageOfListableTask:
+      allOf:
+        - $ref: '#/components/schemas/ResponsePage'
+        - type: object
+          properties:
+            items:
+              description: "Array of tasks."
+              type: array
+              items:
+                $ref: '#/components/schemas/GetListableTask'
+
+    ResponsePageOfAdminAPIGetUserResponse:
+      allOf:
+        - $ref: '#/components/schemas/ResponsePage'
+        - type: object
+          properties:
+            items:
+              description: "Array of admin user responses."
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminAPIGetUserResponse'
+
+    ResponsePageOfAdminAPIGetListableTaskResponse:
+      allOf:
+        - $ref: '#/components/schemas/ResponsePage'
+        - type: object
+          properties:
+            items:
+              description: "Array of admin listable tasks."
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminAPIGetListableTaskResponse'
+
+# -------------------------------------------------------------------
+# GLOBAL SECURITY: operations can use 'public' OR 'private'
+# -------------------------------------------------------------------
+security:
+  - public: []
+  - private: []
+
+paths:
+
+  ######################################################################
+  # PUBLIC API
+  ######################################################################
+  /health:
+    get:
+      tags:
+        - PUBLIC
+      summary: Health check
+      description: Returns the current health status of the service.
+      security:
+        - public: []
+      responses:
+        '200':
+          description: OK. Health status.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: "Possible values: HEALTHY, UNHEALTHY."
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /users:
+    post:
+      tags:
+        - USER
+      summary: Create a new user
+      description: Public endpoint to create a user.
+      security:
+        - public: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: Created
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '409':
+          $ref: '#/components/responses/Problem409'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /offers:
+    get:
+      tags:
+        - OFFER
+      summary: List available offers
+      description: Returns a list of available offers.
+      security:
+        - public: []
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: "Pagination cursor."
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: "Number of items per page."
+      responses:
+        '200':
+          description: OK. A paginated list of offers.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponsePageOfOffer'
+        '204':
+          description: No offers found.
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  ######################################################################
+  # SIGNED USER API
+  ######################################################################
+  /users/self:
+    get:
+      tags:
+        - USER
+      summary: Retrieve current user's data
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "user:read"
+      responses:
+        '200':
+          description: OK. User data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUseByIdResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    patch:
+      tags:
+        - USER
+      summary: Partially update current user's data
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "user:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserByIdRequest'
+      responses:
+        '200':
+          description: OK. User updated.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /users/self/contacts:
+    post:
+      tags:
+        - USER
+        - CONTACT
+      summary: Create a new contact for the current user
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "contact:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateContactRequest'
+      responses:
+        '200':
+          description: OK. Returns the created contact ID.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: "ID of the created contact."
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /users/self/contacts/verify:
+    post:
+      tags:
+        - USER
+        - CONTACT
+      summary: Verify one of the user's contacts
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "contact:verify"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: "Verification code."
+      responses:
+        '204':
+          description: No Content. Contact verified successfully.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /users/self/contacts/{id}:
+    delete:
+      tags:
+        - USER
+        - CONTACT
+      summary: Delete a specific contact from the current user
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "contact:delete"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Contact ID to delete."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content. Contact deleted.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /tasks:
+    post:
+      tags:
+        - TASK
+      summary: Create a new task
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "task:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '200':
+          description: OK. Task created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTaskResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '409':
+          $ref: '#/components/responses/Problem409'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    get:
+      tags:
+        - TASK
+      summary: List all tasks for the current user
+      description: Requires authentication (private).
+      security:
+        - private:
+          - "task:read"
+      parameters:
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: "Pagination cursor."
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: "Number of tasks to fetch."
+      responses:
+        '200':
+          description: OK. Returns a paginated list of tasks.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponsePageOfListableTask'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /tasks/{id}:
+    get:
+      tags:
+        - TASK
+      summary: Retrieve a specific task by ID
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "task:read"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Task ID."
+          schema:
+            type: string
+        - name: s
+          in: query
+          schema:
+            type: string
+          description: "Example query param for search."
+        - name: priority
+          in: query
+          schema:
+            type: integer
+          description: "Example query param for priority."
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK. Task details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTaskResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    patch:
+      tags:
+        - TASK
+      summary: Partially update a task
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "task:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Task ID."
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: OK. Task updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTaskResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    delete:
+      tags:
+        - TASK
+      summary: Delete a task
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "task:delete"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Task ID."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content. Task deleted.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /users/self/subscriptions:
+    post:
+      tags:
+        - USER
+        - SUBSCRIPTION
+      summary: Create a new subscription for the current user
+      description: Requires authentication (private)
+      security:
+        - private:
+          - "subscription:write"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                offer:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: "Offer ID."
+                contact:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: "Contact ID."
+      responses:
+        '204':
+          description: No Content. Subscription created.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '408':
+          description: Request Timeout (e.g., payment timeout).
+          content:
+            application/problem+json:
+              schema:
+                $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+        '409':
+          $ref: '#/components/responses/Problem409'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /users/self/subscriptions/latest:
+    get:
+      tags:
+        - USER
+        - SUBSCRIPTION
+      summary: Retrieve the latest subscription of the current user
+      description: Requires authentication (private).
+      security:
+        - private:
+          - "subscription:read"
+      responses:
+        '200':
+          description: OK. Latest subscription.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetSubscriptionResponse'
+        '204':
+          description: No Content. No subscription found.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  ######################################################################
+  # ADMIN API
+  ######################################################################
+  /admin/users:
+    get:
+      tags:
+        - USER
+        - ADMIN
+      summary: List users (admin)
+      description: Requires role=ADMIN and scope, e.g. admin:read.
+      security:
+        - private:
+          - "admin:read"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: s
+          in: query
+          schema:
+            type: string
+          description: "Search string."
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: "Filter by status."
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: "Pagination cursor."
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: "Number of items to fetch."
+        - name: sort
+          in: query
+          schema:
+            type: string
+          description: "Sort order."
+      responses:
+        '200':
+          description: OK. A paginated list of users.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponsePageOfAdminAPIGetUserResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /admin/users/{id}:
+    get:
+      tags:
+        - USER
+        - ADMIN
+      summary: Retrieve details of a specific user (admin)
+      description: Requires role=ADMIN and scope admin:read.
+      security:
+        - private:
+          - "admin:read"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "User ID to retrieve."
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK. User details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAPIGetUserByIdResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    patch:
+      tags:
+        - USER
+        - ADMIN
+      summary: Partially update a user (admin)
+      description: Requires role=ADMIN and scope admin:write.
+      security:
+        - private:
+          - "admin:write"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "User ID to update."
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminAPIUpdateUserByIdRequest'
+      responses:
+        '200':
+          description: OK. Returns updated user data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAPIGetUserByIdResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    delete:
+      tags:
+        - USER
+        - ADMIN
+      summary: Delete a user (admin)
+      description: Requires role=ADMIN and scope admin:write.
+      security:
+        - private:
+          - "admin:write"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "User ID to delete."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content. User deleted.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /admin/users/{id}/contacts/{key}:
+    delete:
+      tags:
+        - USER
+        - ADMIN
+      summary: Delete a contact from a user (admin)
+      description: Requires role=ADMIN and scope admin:write.
+      security:
+        - private:
+          - "admin:write"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "User ID."
+          schema:
+            type: string
+        - name: key
+          in: path
+          required: true
+          description: "Contact key to delete."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content. Contact deleted.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /admin/subscriptions:
+    post:
+      tags:
+        - USER
+        - SUBSCRIPTION
+        - ADMIN
+      summary: Create multiple subscriptions (admin)
+      description: Requires role=ADMIN and scope admin:write.
+      security:
+        - private:
+          - "admin:write"
+      x-role:
+        - ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: "Subscription ID."
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: "User ID."
+                  offer:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: "Offer ID."
+      responses:
+        '207':
+          description: Multi-Status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    status:
+                      type: string
+                    description:
+                      type: string
+                    type:
+                      type: string
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /admin/subscriptions/{id}:
+    get:
+      tags:
+        - USER
+        - SUBSCRIPTION
+        - ADMIN
+      summary: Retrieve a subscription by ID (admin)
+      description: Requires role=ADMIN and scope admin:read.
+      security:
+        - private:
+          - "admin:read"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Subscription ID."
+          schema:
+            type: string
+      responses:
+        '207':
+          description: Multi-Status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAPIGetSubscriptionByIdResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    delete:
+      tags:
+        - USER
+        - SUBSCRIPTION
+        - ADMIN
+      summary: Delete a subscription (admin)
+      description: Requires role=ADMIN and scope admin:write.
+      security:
+        - private:
+          - "admin:write"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Subscription ID."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content. Subscription deleted.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /admin/offers:
+    post:
+      tags:
+        - OFFER
+        - ADMIN
+      summary: Create offers (admin)
+      description: Requires role=ADMIN and scope admin:write.
+      security:
+        - private:
+          - "admin:write"
+      x-role:
+        - ADMIN
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminAPICreateOfferRequest'
+      responses:
+        '207':
+          description: Multi-Status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    status:
+                      type: string
+                    description:
+                      type: string
+                    type:
+                      type: string
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /admin/offers/{id}:
+    get:
+      tags:
+        - OFFER
+        - ADMIN
+      summary: Get an offer by ID (admin)
+      description: Requires role=ADMIN and scope admin:read.
+      security:
+        - private:
+          - "admin:read"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Offer ID."
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK. Offer details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAPIUpdateOfferByIdRequest'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    patch:
+      tags:
+        - OFFER
+        - ADMIN
+      summary: Partially update an offer (admin)
+      description: Requires role=ADMIN and scope admin:write.
+      security:
+        - private:
+          - "admin:write"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Offer ID."
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminAPIUpdateOfferByIdRequest'
+      responses:
+        '200':
+          description: OK. Returns updated offer details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAPIGetOfferByIdResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    delete:
+      tags:
+        - OFFER
+        - ADMIN
+      summary: Delete an offer (admin)
+      description: Requires role=ADMIN and scope admin:write.
+      security:
+        - private:
+          - "admin:write"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Offer ID."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content. Offer deleted.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '422':
+          $ref: '#/components/responses/Problem422'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /admin/users/{id}/tasks:
+    get:
+      tags:
+        - TASK
+        - ADMIN
+      summary: List tasks for a specific user (admin)
+      description: Requires role=ADMIN and scope admin:read.
+      security:
+        - private:
+          - "admin:read"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "User ID to list tasks for."
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+          description: "Filter by status."
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: "Pagination cursor."
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: "Number of tasks to fetch."
+        - name: sort
+          in: query
+          schema:
+            type: string
+          description: "Sort order."
+      responses:
+        '200':
+          description: OK. Returns a paginated list of tasks for the specified user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponsePageOfAdminAPIGetListableTaskResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+  /admin/users/{id}/tasks/{key}:
+    get:
+      tags:
+        - TASK
+        - ADMIN
+      summary: Retrieve details of a specific task for a user (admin)
+      description: Requires role=ADMIN and scope admin:read.
+      security:
+        - private:
+          - "admin:read"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "User ID."
+          schema:
+            type: string
+        - name: key
+          in: path
+          required: true
+          description: "Task ID or key."
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK. Task details for the specified user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminAPIGetTaskByIdResponse'
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
+
+    delete:
+      tags:
+        - TASK
+        - ADMIN
+      summary: Delete a specific task for a user (admin)
+      description: Requires role=ADMIN and scope admin:write.
+      security:
+        - private:
+          - "admin:write"
+      x-role:
+        - ADMIN
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "User ID."
+          schema:
+            type: string
+        - name: key
+          in: path
+          required: true
+          description: "Task ID to delete."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content. Task deleted.
+        '400':
+          $ref: '#/components/responses/Problem400'
+        '401':
+          $ref: '#/components/responses/Problem401'
+        '403':
+          $ref: '#/components/responses/Problem403'
+        '404':
+          $ref: '#/components/responses/Problem404'
+        '500':
+          $ref: '#/components/responses/Problem500'
+        '503':
+          $ref: '#/components/responses/Problem503'
