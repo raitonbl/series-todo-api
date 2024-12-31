@@ -1380,11 +1380,11 @@ paths:
     post:
       tags:
         - PUBLIC-API
+      operationId: CreateUserSubscription
       summary: Create a new subscription for the current user
-      description: Requires authentication (private)
+      description: Create a subscription for the current user if no subscription is in effect
       security:
-        - private:
-            - "subscription:write"
+        - public: [ "user:write", "subscription:write" ]
       requestBody:
         required: true
         content:
@@ -1422,9 +1422,59 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
         '409':
-          $ref: '#/components/responses/Problem409'
+          description: Whenever the user intend to subscribe to a similar offer or lower offer than the current.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                IncompatibleSubscription:
+                  description: Whenever the user intend to subscribe to a similar offer or lower offer than the current.
+                  value:
+                    type: /problems/subscription/cannot-downgrade-subscription
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: The specified offer must have greater benefits than the current
+                    instance: /problems/subscription/cannot-downgrade-subscription/$traceId
         '422':
-          $ref: '#/components/responses/Problem422'
+          description: Whenever validation fails.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                OfferNotAvailable:
+                  description: Whenever the specified offer isn't available
+                  value:
+                    type: /problems/subscription/offer-not-available
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: The specified offer isn't available to subscribe to
+                    instance: /problems/subscription/offer-not-available/$traceId
+                ContactDoesNotExist:
+                  description: Whenever the specified contact does not exist
+                  value:
+                    type: /problems/subscription/contact-not-found
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: The specified contact does not exist or doesn't belong to the User.
+                    instance: /problems/subscription/contact-not-found/$traceId
+                ContactKindNotSupported:
+                  description: Whenever the specified contact kind isn't MOBILE
+                  value:
+                    type: /problems/subscription/contact-kind-not-supported
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: The specified contact kind does not allow payments to occur
+                    instance: /problems/subscription/contact-kind-not-supported/$traceId
+                ContactNotVerified:
+                  description: Whenever the specified contact isn't verified
+                  value:
+                    type: /problems/subscription/contact-not-verified
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: The specified contact isn't verified therefore cannot be used to make payment
+                    instance: /problems/subscription/contact-not-verified/$traceId
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1434,28 +1484,24 @@ paths:
     get:
       tags:
         - PUBLIC-API
+      operationId: GetCurrentUserSubscription
       summary: Retrieve the latest subscription of the current user
-      description: Requires authentication (private).
+      description: Returns the current subscription of the current user
       security:
-        - private:
-            - "subscription:read"
+        - public: [ "user:read", "subscription:read" ]
       responses:
         '200':
-          description: OK. Latest subscription.
+          description: OK.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetSubscriptionResponse'
         '204':
           description: No Content. No subscription found.
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
-        '404':
-          $ref: '#/components/responses/Problem404'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
