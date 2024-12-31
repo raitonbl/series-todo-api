@@ -725,6 +725,19 @@ components:
             e.g. by adding a fragment identifier or sub-path to the problem type.
             May be used to locate the root of this problem in the source code.
           example: '/some/uri-reference#specific-occurrence-context'
+    CreateOfferResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+          status:
+            type: string
+          description:
+            type: string
+          problem:
+            $ref: "#/components/schemas/Problem"
   examples:
     MinimumAgeConstraintViolation:
       summary: Whenever the specified age (birthdate) is not match the minimum requirement
@@ -892,6 +905,48 @@ components:
         status: 422
         detail: The specified price amount cannot be negative.
         instance: /problems/constraint-violation/price/amount/negative
+    CreateOfferResponse:
+      summary: A Generic Response
+      value:
+        - id: ecbfb414-cc26-46b8-b5ce-edce161d3e44
+          status: CREATED
+          description: Offer successfully created
+        - id: 7c51b950-72e8-42c1-a7ea-32df3c7bdcb3
+          status: NOT_CREATED
+          description: Cannot created Offer due to validation issues
+          problem:
+            type: /problems/constraint-violation/price/amount/negative
+            title: Constraint Violation
+            status: 422
+            detail: The specified price amount cannot be negative.
+            instance: /problems/constraint-violation/price/amount/negative
+        - id: ffcb70af-8d1f-4e0d-988c-79f93a955143
+          status: NOT_CREATED
+          description: Cannot created Offer due to validation issues
+          problem:
+            type: /problems/constraint-violation/price/currency/not-supported
+            title: Constraint Violation
+            status: 422
+            detail: The specified currency is not supported.
+            instance: /problems/constraint-violation/price/currency/not-supported
+        - id: 3c3b3cdf-09cd-488c-b1ef-346ba9a1779e
+          status: NOT_CREATED
+          description: Cannot created Offer due to validation issues
+          problem:
+            type: /problems/constraint-violation/expires_at/invalid-date
+            title: Constraint Violation
+            status: 422
+            detail: The specified expires_at value is invalid or in the past.
+            instance: /problems/constraint-violation/expires_at/invalid-date
+        - id: 0a0eb143-8b02-4579-8ca0-fc8605abb575
+          status: NOT_CREATED
+          description: Cannot created Offer due to validation issues
+          problem:
+            type: /problems/constraint-violation/max_number_of_tasks/exceeded
+            title: Constraint Violation
+            status: 422
+            detail: The specified max_number_of_tasks exceeds the allowed limit.
+            instance: /problems/constraint-violation/max_number_of_tasks/exceeded
 
 security:
   - public: [ "user:read" ]
@@ -1957,6 +2012,7 @@ paths:
       security:
         - private: [ "offer:write" ]
       x-role: [ "OFFER_MANAGER" ]
+      operationId: CreateOffers
       requestBody:
         required: true
         content:
@@ -1971,23 +2027,9 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    status:
-                      type: string
-                    description:
-                      type: string
-                    problem:
-                      $ref: "#/components/schemas/Problem"
-                      examples:
-                        Ad:
-                          description: sss
-                          value:
-
+                $ref: "#/components/schemas/CreateOfferResponse"
+                examples:
+                  $ref: "#/components/examples/CreateOfferResponse"
         '400':
           $ref: '#/components/responses/Problem400'
         '401':
@@ -1996,8 +2038,6 @@ paths:
           $ref: '#/components/responses/Problem403'
         '404':
           $ref: '#/components/responses/Problem404'
-        '422':
-          $ref: '#/components/responses/Problem422'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
