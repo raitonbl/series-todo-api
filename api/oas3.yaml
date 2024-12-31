@@ -19,6 +19,15 @@ components:
       type: openIdConnect
       openIdConnectUrl: https://example.com/private/.well-known/openid-configuration
   responses:
+    TaskNotFound:
+      description: Whenever Task does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            TaskDoesNotExist:
+              $ref: '#/components/examples/TaskDoesNotExist'
     Problem400:
       description: Bad Request
       content:
@@ -141,7 +150,7 @@ components:
         items:
           description: Array of collection items.
           type: array
-          items: {}
+          items: { }
     Money:
       type: object
       properties:
@@ -155,11 +164,11 @@ components:
     ContactKind:
       type: string
       description: "Allowed values: TEL, MOBILE, EMAIL."
-      enum: ["TEL", "MOBILE", "EMAIL"]
+      enum: [ "TEL", "MOBILE", "EMAIL" ]
     ContactType:
       type: string
       description: "Allowed values: WORK, HOME."
-      enum: ["WORK", "HOME"]
+      enum: [ "WORK", "HOME" ]
     Contact:
       type: object
       properties:
@@ -302,7 +311,7 @@ components:
     TaskStatus:
       type: string
       description: "Allowed values: TODO, IN_PROGRESS, ON_HOLD, DONE."
-      enum: ["TODO", "IN_PROGRESS", "ON_HOLD", "DONE"]
+      enum: [ "TODO", "IN_PROGRESS", "ON_HOLD", "DONE" ]
     CreateTaskRequest:
       type: object
       properties:
@@ -693,7 +702,7 @@ components:
         title: Constraint Violation
         status: 422
         detail: Birthdate must match the minimum requirement
-        instance: /problems/constraint-violation/birthdate/minimum/traceId
+        instance: /problems/constraint-violation/birthdate/minimum/$traceId
     UnrecognizableLivesInConstraintViolation:
       summary: Whenever the specified lives_in location is not supported
       value:
@@ -701,7 +710,7 @@ components:
         title: Constraint Violation
         status: 422
         detail: Specified lives_in not supported.
-        instance: /problems/constraint-violation/lives_in/unrecognized/traceId
+        instance: /problems/constraint-violation/lives_in/unrecognized/$traceId
     UnsupportedMobileNumber:
       summary: Whenever the specified Contact phone number is not supported
       value:
@@ -709,7 +718,7 @@ components:
         title: Constraint Violation
         status: 422
         detail: Specified contact is not supported.
-        instance: /problems/constraint-violation/contact/mobile-not-supported/traceId
+        instance: /problems/constraint-violation/contact/mobile-not-supported/$traceId
     UnsupportedEmail:
       summary: Whenever the specified Contact email is not supported
       value:
@@ -717,7 +726,7 @@ components:
         title: Constraint Violation
         status: 422
         detail: Specified contact is not supported.
-        instance: /problems/constraint-violation/contact/email-not-supported/traceId
+        instance: /problems/constraint-violation/contact/email-not-supported/$traceId
     LastNameNotSupported:
       summary: Whenever the specified last name is not supported
       value:
@@ -734,9 +743,63 @@ components:
         status: 422
         detail: Specified first_name is not supported.
         instance: /problems/constraint-violation/first_name/not-supported
+    ContactDoesNotExist:
+      summary: Whenever the specified contact does not belong to the User
+      value:
+        type: /problems/contact/not-found
+        title: Not Found
+        status: 404
+        detail: The specified contact doesn't exist or doesn't belong to the User.
+        instance: /problems/contact/not-found/not-supported
+    TaskNameNotSupported:
+      value:
+        type: /problems/constraint-violation/task/name
+        title: Constraint Violation
+        status: 422
+        detail: The specified name is not supported nor allowed.
+        instance: /problems/constraint-violation/task/name/$traceId
+    TaskDescriptionNotSupported:
+      value:
+        type: /problems/constraint-violation/task/description
+        title: Constraint Violation
+        status: 422
+        detail: The specified description is not supported nor allowed.
+        instance: /problems/constraint-violation/task/description/$traceId
+    TaskLabelNotSupported:
+      value:
+        type: /problems/constraint-violation/task/labels/0
+        title: Constraint Violation
+        status: 422
+        detail: The specified label is not supported nor allowed.
+        instance: /problems/constraint-violation/task/labels/0/$traceId
+    TaskPriorityNotSupported:
+      value:
+        type: /problems/constraint-violation/task/priority
+        title: Constraint Violation
+        status: 422
+        detail: The specified priority is not allowed.
+        instance: /problems/constraint-violation/task/priority
+        context:
+          minimum: 0
+          maximum: 7
+    TaskDoesNotExist:
+      summary: Whenever the specified task does not exist
+      value:
+        type: /problems/task/not-found
+        title: Not Found
+        status: 404
+        detail: The specified contact doesn't exist or doesn't belong to the User.
+        instance: /problems/task/not-found/$traceId
+    TaskStatusNotSupported:
+      value:
+        type: /problems/constraint-violation/task/status
+        title: Constraint Violation
+        status: 422
+        detail: The specified status is not allowed.
+        instance: /problems/constraint-violation/task/status
 security:
-  - public: []
-  - private: []
+  - public: [ "user:read" ]
+  - private: [ ]
 paths:
   /health:
     get:
@@ -745,7 +808,7 @@ paths:
       summary: Health check
       description: Returns the current health status of the service.
       security:
-        - public: []
+        - public: [ ]
       responses:
         '200':
           description: OK. Health status.
@@ -782,7 +845,7 @@ paths:
                 properties:
                   status:
                     type: string
-                    enum: ["OK"]
+                    enum: [ "OK" ]
         '400':
           $ref: '#/components/responses/Problem400'
         '401':
@@ -803,7 +866,7 @@ paths:
                     title: Username not available
                     status: 409
                     detail: The specified username is not available
-                    instance: /problems/username/not-available/traceId
+                    instance: /problems/username/not-available/$traceId
                 ContactNotAvailable:
                   summary: Whenever the specified contact is not available
                   value:
@@ -811,7 +874,7 @@ paths:
                     title: Contact not available
                     status: 409
                     detail: The specified contact is not available
-                    instance: /problems/contact/not-available/traceId
+                    instance: /problems/contact/not-available/$traceId
         '422':
           description: Whenever validation fails
           content:
@@ -847,6 +910,7 @@ paths:
     get:
       tags:
         - PUBLIC-API
+      operationId: ListOffers
       summary: List available offers
       description: Returns a list of available offers.
       parameters:
@@ -880,11 +944,11 @@ paths:
     get:
       tags:
         - PUBLIC-API
+      operationId: GetCurrentUserInformation
       summary: Retrieve current user's data
-      description: Requires authentication (private)
+      description: Returns the current user's data
       security:
-        - private:
-            - "user:read"
+        - public: [ "user:read" ]
       responses:
         '200':
           description: OK. User data.
@@ -892,16 +956,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetUseByIdResponse'
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
-        '404':
-          $ref: '#/components/responses/Problem404'
-        '422':
-          $ref: '#/components/responses/Problem422'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -909,11 +967,11 @@ paths:
     patch:
       tags:
         - PUBLIC-API
-      summary: Partially update current user's data
-      description: Requires authentication (private)
+      operationId: UpdateCurrentUserInformation
+      summary: Partially Update the current User data
+      description: Updates current user data
       security:
-        - private:
-            - "user:write"
+        - public: [ "user:write" ]
       requestBody:
         required: true
         content:
@@ -921,8 +979,16 @@ paths:
             schema:
               $ref: '#/components/schemas/UpdateUserByIdRequest'
       responses:
-        '200':
-          description: OK. User updated.
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ "OK" ]
         '400':
           $ref: '#/components/responses/Problem400'
         '401':
@@ -932,7 +998,20 @@ paths:
         '404':
           $ref: '#/components/responses/Problem404'
         '422':
-          $ref: '#/components/responses/Problem422'
+          description: Whenever validation fails
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                MinimumAgeConstraintViolation:
+                  $ref: '#/components/examples/MinimumAgeConstraintViolation'
+                UnrecognizableLivesInConstraintViolation:
+                  $ref: '#/components/examples/UnrecognizableLivesInConstraintViolation'
+                LastNameNotSupported:
+                  $ref: '#/components/examples/LastNameNotSupported'
+                FirstNameNotSupported:
+                  $ref: '#/components/examples/FirstNameNotSupported'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -941,11 +1020,11 @@ paths:
     post:
       tags:
         - PUBLIC-API
+      operationId: AddUserContact
       summary: Create a new contact for the current user
-      description: Requires authentication (private)
+      description: Create a new contact for the current user and awaits verification of contact.
       security:
-        - private:
-            - "contact:write"
+        - public: [ "user:write" ]
       requestBody:
         required: true
         content:
@@ -978,15 +1057,22 @@ paths:
         '503':
           $ref: '#/components/responses/Problem503'
 
-  /users/self/contacts/verify:
+  /users/self/contacts/{id}/verify:
     post:
       tags:
         - PUBLIC-API
+      operationId: VerifyCurrentUserContactById
       summary: Verify one of the user's contacts
-      description: Requires authentication (private)
+      description: Verifies a contact that has been created but not verified
       security:
-        - private:
-            - "contact:verify"
+        - public:
+            - "user:write"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -1007,9 +1093,31 @@ paths:
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          description: Contact doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                ContactDoesNotExist:
+                  $ref: '#/components/examples/ContactDoesNotExist'
         '422':
-          $ref: '#/components/responses/Problem422'
+          description: Specified code doesn't match
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                VerificationCodeDoesNotMatch:
+                  value:
+                    type: /problems/constraint-violation/contact/verification/code
+                    title: Constraint Violation
+                    status: 422
+                    detail: The specified code doesn't match the code sent to the contact.
+                    instance: /problems/constraint-violation/contact/verification/code/$traceId
+                    context:
+                      number_of_retries: 3
+                      number_of_attempts: 2
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1019,11 +1127,12 @@ paths:
     delete:
       tags:
         - PUBLIC-API
+      operationId: DeleteContactById
       summary: Delete a specific contact from the current user
       description: Requires authentication (private)
       security:
-        - private:
-            - "contact:delete"
+        - public:
+            - "user:write"
       parameters:
         - name: id
           in: path
@@ -1034,16 +1143,19 @@ paths:
       responses:
         '204':
           description: No Content. Contact deleted.
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
-        '422':
-          $ref: '#/components/responses/Problem422'
+          description: Contact doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                ContactDoesNotExist:
+                  $ref: '#/components/examples/ContactDoesNotExist'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1053,11 +1165,11 @@ paths:
     post:
       tags:
         - PUBLIC-API
+      operationId: CreateUserTask
       summary: Create a new task
-      description: Requires authentication (private)
+      description: Create a task on the User board
       security:
-        - private:
-            - "task:write"
+        - public: [ "task:write", "user:write" ]
       requestBody:
         required: true
         content:
@@ -1077,12 +1189,21 @@ paths:
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
-        '404':
-          $ref: '#/components/responses/Problem404'
-        '409':
-          $ref: '#/components/responses/Problem409'
         '422':
-          $ref: '#/components/responses/Problem422'
+          description: Whenever validation fails
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                TaskNameNotSupported:
+                  $ref: '#/components/examples/TaskLabelNotSupported'
+                TaskDescriptionNotSupported:
+                  $ref: '#/components/examples/TaskDescriptionNotSupported'
+                TaskLabelNotSupported:
+                  $ref: '#/components/examples/TaskLabelNotSupported'
+                TaskPriorityNotSupported:
+                  $ref: '#/components/examples/TaskPriorityNotSupported'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1090,12 +1211,17 @@ paths:
     get:
       tags:
         - PUBLIC-API
-      summary: List all tasks for the current user
-      description: Requires authentication (private).
+      operationId: GetUserTasks
+      summary: List tasks for the current user
+      description: Returns a page contained tasks that match criteria.
       security:
-        - private:
-            - "task:read"
+        - public: [ "task:read", "user:read" ]
       parameters:
+        - name: s
+          in: query
+          schema:
+            type: string
+          description: Search filter to apply
         - name: cursor
           in: query
           schema:
@@ -1106,6 +1232,15 @@ paths:
           schema:
             type: integer
           description: "Number of tasks to fetch."
+        - name: priority
+          in: query
+          schema:
+            type: integer
+          description: "Example query param for priority."
+        - name: sort
+          in: query
+          schema:
+            type: string
       responses:
         '200':
           description: OK. Returns a paginated list of tasks.
@@ -1113,14 +1248,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponsePageOfListableTask'
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
-        '404':
-          $ref: '#/components/responses/Problem404'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1130,38 +1261,16 @@ paths:
     get:
       tags:
         - PUBLIC-API
+      operationId: GetUserTaskById
       summary: Retrieve a specific task by ID
-      description: Requires authentication (private)
+      description: Returns a specific task for the user
       security:
-        - private:
-            - "task:read"
+        - public: [ "task:read", "user:read" ]
       parameters:
         - name: id
           in: path
           required: true
           description: "Task ID."
-          schema:
-            type: string
-        - name: s
-          in: query
-          schema:
-            type: string
-          description: "Example query param for search."
-        - name: priority
-          in: query
-          schema:
-            type: integer
-          description: "Example query param for priority."
-        - name: cursor
-          in: query
-          schema:
-            type: string
-        - name: limit
-          in: query
-          schema:
-            type: integer
-        - name: sort
-          in: query
           schema:
             type: string
       responses:
@@ -1171,14 +1280,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetTaskResponse'
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          $ref: "#/components/responses/TaskNotFound"
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1186,11 +1293,11 @@ paths:
     patch:
       tags:
         - PUBLIC-API
+      operationId: UpdateUserTaskById
       summary: Partially update a task
-      description: Requires authentication (private)
+      description: Updates a task
       security:
-        - private:
-            - "task:write"
+        - public: [ "task:write", "user:write" ]
       parameters:
         - name: id
           in: path
@@ -1218,9 +1325,24 @@ paths:
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          $ref: "#/components/responses/TaskNotFound"
         '422':
-          $ref: '#/components/responses/Problem422'
+          description: Whenever validation fails
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                TaskNameNotSupported:
+                  $ref: '#/components/examples/TaskLabelNotSupported'
+                TaskDescriptionNotSupported:
+                  $ref: '#/components/examples/TaskDescriptionNotSupported'
+                TaskLabelNotSupported:
+                  $ref: '#/components/examples/TaskLabelNotSupported'
+                TaskPriorityNotSupported:
+                  $ref: '#/components/examples/TaskPriorityNotSupported'
+                TaskStatusNotSupported:
+                  $ref: '#/components/examples/TaskStatusNotSupported'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1229,10 +1351,10 @@ paths:
       tags:
         - PUBLIC-API
       summary: Delete a task
-      description: Requires authentication (private)
+      operationId: DeleteUserTaskById
+      description: Deletes permanently a task
       security:
-        - private:
-            - "task:delete"
+        - public: [ "task:write", "user:write" ]
       parameters:
         - name: id
           in: path
@@ -1243,14 +1365,12 @@ paths:
       responses:
         '204':
           description: No Content. Task deleted.
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          $ref: "#/components/responses/TaskNotFound"
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
