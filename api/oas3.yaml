@@ -7,9 +7,6 @@ tags:
   - name: PUBLIC-API
   - name: PRIVATE-API
   - name: SYSTEM-API
-servers:
-  - url: "https://api.example.com"
-
 components:
   securitySchemes:
     public:
@@ -28,6 +25,41 @@ components:
           examples:
             TaskDoesNotExist:
               $ref: '#/components/examples/TaskDoesNotExist'
+    UserNotFound:
+      description: Whenever User does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            TaskDoesNotExist:
+              $ref: '#/components/examples/UserDoesNotExist'
+    OfferDoesNotExist:
+      description: Whenever Offer does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            TaskDoesNotExist:
+              $ref: '#/components/examples/OfferDoesNotExist'
+    SubscriptionNotFound:
+      description: Whenever Subscription does not exist
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          examples:
+            SubscriptionNotFound:
+              description: Subscription does not exist
+              value:
+                summary: Whenever the specified subscription does not exist
+                value:
+                  type: /problems/subscription/not-found
+                  title: Not Found
+                  status: 404
+                  detail: The specified subscription doesn't exist.
+                  instance: /problems/subscription/not-found/$traceId
     Problem400:
       description: Bad Request
       content:
@@ -121,6 +153,21 @@ components:
                 status: 503
                 detail: Specified operation cannot be performed due to service availability issues
                 instance: /problems/http/service-not-available
+  parameters:
+    TicketId:
+      name: "X-Ticket-Id"
+      in: "header"
+      required: true
+      description: Represents the code of a Ticket submitted that initiates a Support Operation
+      schema:
+        type: string
+    TicketSystem:
+      name: "X-Ticket-System"
+      in: "header"
+      required: true
+      description: Represents the name of the System that the Support Ticket belongs to
+      schema:
+        type: string
   schemas:
     ResponsePage:
       type: object
@@ -218,9 +265,6 @@ components:
         max_number_of_tasks:
           type: integer
           description: "Maximum number of tasks allowed."
-        thumbnail:
-          type: string
-          description: "URL of the subscription thumbnail."
         started_at:
           type: string
           format: date-time
@@ -303,9 +347,6 @@ components:
         max_number_of_tasks:
           type: integer
           description: "Maximum number of tasks permitted by this offer."
-        thumbnail:
-          type: string
-          description: "URL of the offer thumbnail."
         price:
           $ref: '#/components/schemas/Money'
     TaskStatus:
@@ -492,9 +533,6 @@ components:
         max_number_of_tasks:
           type: integer
           description: "Maximum tasks."
-        thumbnail:
-          type: string
-          description: "Thumbnail URL."
         started_at:
           type: string
           format: date-time
@@ -525,9 +563,6 @@ components:
         max_number_of_tasks:
           type: integer
           description: "Maximum tasks for this offer."
-        thumbnail:
-          type: string
-          description: "Thumbnail URL."
         is_enabled:
           type: boolean
           description: "Whether the offer is enabled."
@@ -546,8 +581,6 @@ components:
               type: string
             max_number_of_tasks:
               type: integer
-            thumbnail:
-              type: string
             expires_at:
               type: string
               format: date-time
@@ -568,8 +601,6 @@ components:
           type: string
         max_number_of_tasks:
           type: integer
-        thumbnail:
-          type: string
         is_enabled:
           type: boolean
         expires_at:
@@ -788,7 +819,7 @@ components:
         type: /problems/task/not-found
         title: Not Found
         status: 404
-        detail: The specified contact doesn't exist or doesn't belong to the User.
+        detail: The specified task doesn't exist or doesn't belong to the User.
         instance: /problems/task/not-found/$traceId
     TaskStatusNotSupported:
       value:
@@ -797,6 +828,71 @@ components:
         status: 422
         detail: The specified status is not allowed.
         instance: /problems/constraint-violation/task/status
+    OfferDoesNotExist:
+      summary: Whenever the specified offer does not exist
+      value:
+        type: /problems/offer/not-found
+        title: Not Found
+        status: 404
+        detail: The specified offer doesn't exist.
+        instance: /problems/offer/not-found/$traceId
+    TicketIdConstraintViolation:
+      summary: Whenever Ticket is missing on support Operation
+      value:
+        type: /problems/audit/missing-ticket-id
+        title: Forbidden
+        status: 400
+        detail: Missing Ticket Id
+        instance: /problems/offer/not-found/$traceId
+    TicketSystemConstraintViolation:
+      summary: Whenever Ticket System is missing on support Operation
+      value:
+        type: /problems/audit/missing-ticket-system
+        title: Forbidden
+        status: 400
+        detail: Missing Ticket Id
+        instance: /problems/audit/missing-ticket-system/$traceId
+    UserDoesNotExist:
+      summary: Whenever the specified user does not exist
+      value:
+        type: /problems/user/not-found
+        title: Not Found
+        status: 404
+        detail: The specified User doesn't exist.
+        instance: /problems/user/not-found/$traceId
+    MaxNumberOfTasksExceeded:
+      summary: Whenever the specified number of tasks exceeds the allowed maximum
+      value:
+        type: /problems/constraint-violation/max_number_of_tasks/exceeded
+        title: Constraint Violation
+        status: 422
+        detail: The specified max_number_of_tasks exceeds the allowed limit.
+        instance: /problems/constraint-violation/max_number_of_tasks/exceeded
+    InvalidExpiryDate:
+      summary: Whenever the expiry date is invalid or in the past
+      value:
+        type: /problems/constraint-violation/expires_at/invalid-date
+        title: Constraint Violation
+        status: 422
+        detail: The specified expires_at value is invalid or in the past.
+        instance: /problems/constraint-violation/expires_at/invalid-date
+    UnsupportedCurrency:
+      summary: Whenever the specified currency is not supported
+      value:
+        type: /problems/constraint-violation/price/currency/not-supported
+        title: Constraint Violation
+        status: 422
+        detail: The specified currency is not supported.
+        instance: /problems/constraint-violation/price/currency/not-supported
+    NegativePriceAmount:
+      summary: Whenever the specified price amount is negative
+      value:
+        type: /problems/constraint-violation/price/amount/negative
+        title: Constraint Violation
+        status: 422
+        detail: The specified price amount cannot be negative.
+        instance: /problems/constraint-violation/price/amount/negative
+
 security:
   - public: [ "user:read" ]
   - private: [ ]
@@ -1509,26 +1605,19 @@ paths:
 
   /admin/users:
     get:
-      tags:
-        - PRIVATE-API
-      summary: List users (admin)
-      description: Requires role=ADMIN and scope, e.g. admin:read.
+      tags: [ "PRIVATE-API" ]
+      summary: List users
+      description: Returns page of Users
       security:
-        - private:
-            - "admin:read"
-      x-role:
-        - ADMIN
+        - private: [ "user:read" ]
+      x-role: [ "USER_VIEWER" ]
+      operationId: GetUsers
       parameters:
         - name: s
           in: query
           schema:
             type: string
           description: "Search string."
-        - name: status
-          in: query
-          schema:
-            type: string
-          description: "Filter by status."
         - name: cursor
           in: query
           schema:
@@ -1551,14 +1640,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponsePageOfAdminAPIGetUserResponse'
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
-        '404':
-          $ref: '#/components/responses/Problem404'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1566,15 +1651,13 @@ paths:
 
   /admin/users/{id}:
     get:
-      tags:
-        - PRIVATE-API
-      summary: Retrieve details of a specific user (admin)
-      description: Requires role=ADMIN and scope admin:read.
+      tags: [ "PRIVATE-API" ]
+      summary: Retrieve details of a specific user
+      description: Returns a specific User
       security:
-        - private:
-            - "admin:read"
-      x-role:
-        - ADMIN
+        - private: [ "user:read" ]
+      x-role: [ "USER_VIEWER" ]
+      operationId: GetUserInformationById
       parameters:
         - name: id
           in: path
@@ -1589,29 +1672,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminAPIGetUserByIdResponse'
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          $ref: '#/components/responses/UserNotFound'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
 
     patch:
-      tags:
-        - PRIVATE-API
-      summary: Partially update a user (admin)
-      description: Requires role=ADMIN and scope admin:write.
+      tags: [ "PRIVATE-API" ]
+      summary: Partially update a user
+      description: Updates the specified User
       security:
-        - private:
-            - "admin:write"
-      x-role:
-        - ADMIN
+        - private: [ "user:write" ]
+      x-role: [ "USER_MANAGER" ]
+      operationId: UpdateUserInformationById
       parameters:
         - name: id
           in: path
@@ -1619,6 +1698,8 @@ paths:
           description: "User ID to update."
           schema:
             type: string
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/TicketSystem"
       requestBody:
         required: true
         content:
@@ -1639,7 +1720,22 @@ paths:
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          $ref: '#/components/responses/UserNotFound'
+        '422':
+          description: Whenever validation fails
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                MinimumAgeConstraintViolation:
+                  $ref: '#/components/examples/MinimumAgeConstraintViolation'
+                UnrecognizableLivesInConstraintViolation:
+                  $ref: '#/components/examples/UnrecognizableLivesInConstraintViolation'
+                LastNameNotSupported:
+                  $ref: '#/components/examples/LastNameNotSupported'
+                FirstNameNotSupported:
+                  $ref: '#/components/examples/FirstNameNotSupported'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1648,13 +1744,12 @@ paths:
     delete:
       tags:
         - PRIVATE-API
-      summary: Delete a user (admin)
-      description: Requires role=ADMIN and scope admin:write.
+      summary: Delete a user
+      description: Deletes the specified User
       security:
-        - private:
-            - "admin:write"
-      x-role:
-        - ADMIN
+        - private: [ "user:write" ]
+      x-role: [ "USER_MANAGER" ]
+      operationId: DeleteUserById
       parameters:
         - name: id
           in: path
@@ -1662,17 +1757,17 @@ paths:
           description: "User ID to delete."
           schema:
             type: string
+        - $ref: "#/components/parameters/TicketSystem"
+        - $ref: "#/components/parameters/TicketId"
       responses:
         '204':
           description: No Content. User deleted.
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          $ref: '#/components/responses/UserNotFound'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1788,15 +1883,13 @@ paths:
 
   /admin/subscriptions/{id}:
     get:
-      tags:
-        - PRIVATE-API
-      summary: Retrieve a subscription by ID (admin)
-      description: Requires role=ADMIN and scope admin:read.
+      tags: [ "PRIVATE-API" ]
+      summary: Retrieve a subscription by ID
+      description: Returns the specified subscription
       security:
-        - private:
-            - "admin:read"
-      x-role:
-        - ADMIN
+        - private: [ "user:read","subscription:read" ]
+      x-role: [ "USER_VIEWER" ]
+      operationId: GetUserSubscriptionById
       parameters:
         - name: id
           in: path
@@ -1805,37 +1898,31 @@ paths:
           schema:
             type: string
       responses:
-        '207':
-          description: Multi-Status
+        '200':
+          description: Ok.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminAPIGetSubscriptionByIdResponse'
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
-        '422':
-          $ref: '#/components/responses/Problem422'
+          $ref: '#/components/responses/SubscriptionNotFound'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
 
     delete:
-      tags:
-        - PRIVATE-API
-      summary: Delete a subscription (admin)
-      description: Requires role=ADMIN and scope admin:write.
+      tags: [ "PRIVATE-API" ]
+      summary: Expires a subscription
+      description: Expires an active subscription
       security:
-        - private:
-            - "admin:write"
-      x-role:
-        - ADMIN
+        - private: [ "user:write","subscription:write" ]
+      x-role: [ "USER_MANAGER" ]
+      operationId: ExpireSubscriptionById
       parameters:
         - name: id
           in: path
@@ -1843,6 +1930,8 @@ paths:
           description: "Subscription ID."
           schema:
             type: string
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/TicketSystem"
       responses:
         '204':
           description: No Content. Subscription deleted.
@@ -1853,9 +1942,7 @@ paths:
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
-        '422':
-          $ref: '#/components/responses/Problem422'
+          $ref: '#/components/responses/SubscriptionNotFound'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1865,13 +1952,11 @@ paths:
     post:
       tags:
         - PRIVATE-API
-      summary: Create offers (admin)
-      description: Requires role=ADMIN and scope admin:write.
+      summary: Creates offers
+      description: Create a bulk of Offers
       security:
-        - private:
-            - "admin:write"
-      x-role:
-        - ADMIN
+        - private: [ "offer:write" ]
+      x-role: [ "OFFER_MANAGER" ]
       requestBody:
         required: true
         content:
@@ -1896,8 +1981,13 @@ paths:
                       type: string
                     description:
                       type: string
-                    type:
-                      type: string
+                    problem:
+                      $ref: "#/components/schemas/Problem"
+                      examples:
+                        Ad:
+                          description: sss
+                          value:
+
         '400':
           $ref: '#/components/responses/Problem400'
         '401':
@@ -1917,13 +2007,11 @@ paths:
     get:
       tags:
         - PRIVATE-API
-      summary: Get an offer by ID (admin)
-      description: Requires role=ADMIN and scope admin:read.
+      summary: Get an offer by ID
+      description: Returns the specified offer
       security:
-        - private:
-            - "admin:read"
-      x-role:
-        - ADMIN
+        - private: [ "offer:read" ]
+      x-role: [ "OFFER_VIEWER" ]
       parameters:
         - name: id
           in: path
@@ -1938,16 +2026,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminAPIUpdateOfferByIdRequest'
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
-        '422':
-          $ref: '#/components/responses/Problem422'
+          $ref: '#/components/responses/OfferDoesNotExist'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -1956,13 +2040,12 @@ paths:
     patch:
       tags:
         - PRIVATE-API
-      summary: Partially update an offer (admin)
-      description: Requires role=ADMIN and scope admin:write.
+      summary: Partially update an offer
+      description: Updates the specified offer
       security:
-        - private:
-            - "admin:write"
-      x-role:
-        - ADMIN
+        - private: [ "offer:write" ]
+      x-role: [ "OFFER_MANAGER" ]
+      operationId: UpdateOfferById
       parameters:
         - name: id
           in: path
@@ -1970,6 +2053,8 @@ paths:
           description: "Offer ID."
           schema:
             type: string
+        - $ref: "#/components/parameters/TicketSystem"
+        - $ref: "#/components/parameters/TicketId"
       requestBody:
         required: true
         content:
@@ -1990,24 +2075,35 @@ paths:
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          $ref: '#/components/responses/OfferDoesNotExist'
         '422':
-          $ref: '#/components/responses/Problem422'
+          description: Whenever validation fails
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                MaxNumberOfTasksExceeded:
+                  $ref: '#/components/examples/MaxNumberOfTasksExceeded'
+                InvalidExpiryDate:
+                  $ref: '#/components/examples/InvalidExpiryDate'
+                UnsupportedCurrency:
+                  $ref: '#/components/examples/UnsupportedCurrency'
+                NegativePriceAmount:
+                  $ref: '#/components/examples/NegativePriceAmount'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
 
     delete:
-      tags:
-        - PRIVATE-API
-      summary: Delete an offer (admin)
-      description: Requires role=ADMIN and scope admin:write.
+      tags: [ "PRIVATE-API" ]
+      operationId: DeleteOfferById
+      summary: Delete an offer
+      description: Deletes an offer
       security:
-        - private:
-            - "admin:write"
-      x-role:
-        - ADMIN
+        - private: [ "offer:write" ]
+      x-role: [ "OFFER_MANAGER" ]
       parameters:
         - name: id
           in: path
@@ -2015,35 +2111,33 @@ paths:
           description: "Offer ID."
           schema:
             type: string
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/TicketSystem"
       responses:
         '204':
           description: No Content. Offer deleted.
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
+        '400':
+          $ref: '#/components/responses/Problem400'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
-        '422':
-          $ref: '#/components/responses/Problem422'
+          $ref: '#/components/responses/OfferDoesNotExist'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
-
   /admin/users/{id}/tasks:
     get:
       tags:
         - PRIVATE-API
-      summary: List tasks for a specific user (admin)
-      description: Requires role=ADMIN and scope admin:read.
+      operationId: GetUserTasksById
+      summary: List tasks for a specific user
+      description: Returns a page of user tasks
       security:
-        - private:
-            - "admin:read"
-      x-role:
-        - ADMIN
+        - private: [ "user:read" ]
+      x-role: [ "USER_MANAGER" ]
       parameters:
         - name: id
           in: path
@@ -2051,6 +2145,11 @@ paths:
           description: "User ID to list tasks for."
           schema:
             type: string
+        - name: s
+          in: query
+          schema:
+            type: string
+          description: "Filter by search criteria."
         - name: status
           in: query
           schema:
@@ -2078,14 +2177,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponsePageOfAdminAPIGetListableTaskResponse'
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          $ref: '#/components/responses/UserNotFound'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -2093,15 +2190,13 @@ paths:
 
   /admin/users/{id}/tasks/{key}:
     get:
-      tags:
-        - PRIVATE-API
-      summary: Retrieve details of a specific task for a user (admin)
-      description: Requires role=ADMIN and scope admin:read.
+      tags: [ "PRIVATE-API" ]
+      operationId: GetUserTaskByUserIdAndTaskId
+      summary: Retrieve details of a specific task for a user
+      description: Returns the specified task
       security:
-        - private:
-            - "admin:read"
-      x-role:
-        - ADMIN
+        - private: [ "user:read", "task:read" ]
+      x-role: [ "USER_MANAGER" ]
       parameters:
         - name: id
           in: path
@@ -2122,54 +2217,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AdminAPIGetTaskByIdResponse'
-        '400':
-          $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          description: Whenever User  or Task does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                UserDoesNotExist:
+                  description: Whenever User does not exist
+                  $ref: '#/components/examples/UserDoesNotExist'
+                TaskDoesNotExist:
+                  description: Whenever Task does not exist
+                  $ref: '#/components/examples/TaskDoesNotExist'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
 
-    delete:
-      tags:
-        - PRIVATE-API
-      summary: Delete a specific task for a user (admin)
-      description: Requires role=ADMIN and scope admin:write.
-      security:
-        - private:
-            - "admin:write"
-      x-role:
-        - ADMIN
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: "User ID."
-          schema:
-            type: string
-        - name: key
-          in: path
-          required: true
-          description: "Task ID to delete."
-          schema:
-            type: string
-      responses:
-        '204':
-          description: No Content. Task deleted.
-        '400':
-          $ref: '#/components/responses/Problem400'
-        '401':
-          $ref: '#/components/responses/Problem401'
-        '403':
-          $ref: '#/components/responses/Problem403'
-        '404':
-          $ref: '#/components/responses/Problem404'
-        '500':
-          $ref: '#/components/responses/Problem500'
-        '503':
-          $ref: '#/components/responses/Problem503'
