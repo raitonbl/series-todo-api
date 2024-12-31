@@ -3,14 +3,14 @@ info:
   title: Core Service API
   description: A simple API to manage tasks.
   version: 1.0.0
-
+tags:
+  - name: PUBLIC-API
+  - name: PRIVATE-API
+  - name: SYSTEM-API
 servers:
   - url: "https://api.example.com"
 
 components:
-  ######################################################################
-  # SECURITY SCHEMES
-  ######################################################################
   securitySchemes:
     public:
       type: openIdConnect
@@ -18,68 +18,101 @@ components:
     private:
       type: openIdConnect
       openIdConnectUrl: https://example.com/private/.well-known/openid-configuration
-
-  ######################################################################
-  # REUSABLE ERROR RESPONSES (Zalando Problem)
-  ######################################################################
   responses:
     Problem400:
       description: Bad Request
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+            $ref: '#/components/schemas/Problem'
     Problem401:
       description: Unauthorized
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+            $ref: '#/components/schemas/Problem'
+          examples:
+            AccessTokenNotSupported:
+              summary: Whenever the access token is missing or the access token isn't valid
+              value:
+                type: /problems/http/unauthorized
+                title: Unauthorized
+                status: 401
+                detail: Request not authorized to perform operation
+                instance: /problems/http/unauthorized
     Problem403:
       description: Forbidden
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+            $ref: '#/components/schemas/Problem'
+          examples:
+            AccessTokenNotAuthorized:
+              summary: Whenever the access token is not authorized to perform operation
+              value:
+                type: /problems/http/not-authorized
+                title: Forbidden
+                status: 403
+                detail: Request not authorized to perform operation
+                instance: /problems/http/not-authorized
     Problem404:
       description: Not Found
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+            $ref: '#/components/schemas/Problem'
+          examples:
+            ResourceNotFound:
+              summary: Whenever the operation doesn't exist
+              value:
+                type: /problems/http/not-found
+                title: NotFound
+                status: 404
+                detail: Specified operation doesn't exist
+                instance: /problems/http/not-found
     Problem409:
       description: Conflict
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+            $ref: '#/components/schemas/Problem'
     Problem422:
       description: Unprocessable Entity
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+            $ref: '#/components/schemas/Problem'
     Problem500:
       description: Internal Server Error
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+            $ref: '#/components/schemas/Problem'
+          examples:
+            SomethingWentWrong:
+              summary: Operation cannot be performed due to an error
+              value:
+                type: /problems/http/server-error
+                title: Something went wrong
+                status: 500
+                detail: Specified operation cannot be performed due to an error
+                instance: /problems/http/server-error
     Problem503:
       description: Service Unavailable
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
-
-  ######################################################################
-  # SCHEMAS
-  ######################################################################
+            $ref: '#/components/schemas/Problem'
+          examples:
+            ServiceNotAvailable:
+              summary: Service isn't available
+              value:
+                type: /problems/http/service-not-available
+                title: Service not available
+                status: 503
+                detail: Specified operation cannot be performed due to service availability issues
+                instance: /problems/http/service-not-available
   schemas:
-
-    ###########################################################
-    # ZALANDO BASE PAGINATION SCHEMA
-    ###########################################################
     ResponsePage:
       type: object
       required:
@@ -105,22 +138,10 @@ components:
           description: Pagination link/cursor pointing to the last page.
           type: string
           format: uri
-        query:
-          description: Object containing the query filters applied to the collection resource.
-          type: object
-          properties:
-            # Example filter fields, adjust as needed
-            q:
-              type: string
-              description: "Search query string."
         items:
           description: Array of collection items.
           type: array
           items: {}
-
-    ###########################################################
-    # MONEY
-    ###########################################################
     Money:
       type: object
       properties:
@@ -131,20 +152,14 @@ components:
         currency:
           type: string
           description: "Currency code in ISO-4217 format (3 letters)."
-
-    ###########################################################
-    # CONTACT
-    ###########################################################
     ContactKind:
       type: string
       description: "Allowed values: TEL, MOBILE, EMAIL."
       enum: ["TEL", "MOBILE", "EMAIL"]
-
     ContactType:
       type: string
       description: "Allowed values: WORK, HOME."
       enum: ["WORK", "HOME"]
-
     Contact:
       type: object
       properties:
@@ -164,7 +179,6 @@ components:
         is_authorized:
           type: boolean
           description: "Whether the contact is authorized."
-
     CreateContactRequest:
       type: object
       description: Schema for creating a new contact for the user.
@@ -177,9 +191,9 @@ components:
           type: string
           description: "The contact value (e.g., phone number or email address)."
         kind:
-           $ref: '#/components/schemas/ContactKind'
+          $ref: '#/components/schemas/ContactKind'
         type:
-           $ref: '#/components/schemas/ContactType'
+          $ref: '#/components/schemas/ContactType'
     GetSubscriptionResponse:
       type: object
       properties:
@@ -206,10 +220,6 @@ components:
           type: string
           format: date-time
           description: "End datetime of the subscription."
-
-    ###########################################################
-    # USERS
-    ###########################################################
     CreateUserRequest:
       type: object
       properties:
@@ -231,7 +241,6 @@ components:
           type: string
           format: date
           description: "User's birth date (YYYY-MM-DD)."
-
     UpdateUserByIdRequest:
       type: object
       properties:
@@ -248,7 +257,6 @@ components:
           type: string
           format: date
           description: "User's birth date (YYYY-MM-DD)."
-
     GetUseByIdResponse:
       type: object
       properties:
@@ -271,10 +279,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Contact'
-
-    ###########################################################
-    # OFFERS
-    ###########################################################
     GetOfferResponse:
       type: object
       properties:
@@ -294,16 +298,11 @@ components:
           type: string
           description: "URL of the offer thumbnail."
         price:
-           $ref: '#/components/schemas/Money'
-
-    ###########################################################
-    # TASKS
-    ###########################################################
+          $ref: '#/components/schemas/Money'
     TaskStatus:
       type: string
       description: "Allowed values: TODO, IN_PROGRESS, ON_HOLD, DONE."
       enum: ["TODO", "IN_PROGRESS", "ON_HOLD", "DONE"]
-
     CreateTaskRequest:
       type: object
       properties:
@@ -321,7 +320,6 @@ components:
         priority:
           type: integer
           description: "Priority level of the task."
-
     GetListableTask:
       type: object
       properties:
@@ -342,7 +340,6 @@ components:
           type: string
           format: date-time
           description: "Datetime when the task was created."
-
     GetTaskResponse:
       type: object
       properties:
@@ -373,7 +370,6 @@ components:
         priority:
           type: integer
           description: "Priority level of the task."
-
     UpdateTaskRequest:
       description: "One of the following partial updates: status, priority, or the same structure as CreateTaskRequest."
       anyOf:
@@ -387,10 +383,6 @@ components:
             priority:
               type: integer
               description: "New priority for the task."
-
-    ###########################################################
-    # ADMIN SCHEMAS
-    ###########################################################
     AdminAPIGetUserResponse:
       type: object
       properties:
@@ -419,7 +411,6 @@ components:
           type: string
           format: date
           description: "User's birth date."
-
     AdminAPIGetUserByIdResponse:
       type: object
       properties:
@@ -468,7 +459,6 @@ components:
         last_modified_by:
           type: string
           description: "Identifier or name of the last modifier."
-
     AdminAPIUpdateUserByIdRequest:
       description: "Combines UpdateUserByIdRequest fields plus optional 'is_authorized'."
       anyOf:
@@ -478,7 +468,6 @@ components:
             is_authorized:
               type: boolean
               description: "Whether the user is authorized."
-
     AdminAPIGetSubscriptionByIdResponse:
       type: object
       properties:
@@ -512,7 +501,6 @@ components:
         created_by:
           type: string
           description: "Creator identifier."
-
     AdminAPICreateOfferRequest:
       type: object
       properties:
@@ -538,7 +526,6 @@ components:
           type: string
           format: date-time
           description: "Datetime when the offer expires."
-
     AdminAPIUpdateOfferByIdRequest:
       description: "Payload for partial or full offer update, also can update 'is_enabled'."
       anyOf:
@@ -561,7 +548,6 @@ components:
           properties:
             is_enabled:
               type: boolean
-
     AdminAPIGetOfferByIdResponse:
       type: object
       properties:
@@ -591,8 +577,7 @@ components:
         last_modified_by:
           type: string
         price:
-           $ref: '#/components/schemas/Money'
-
+          $ref: '#/components/schemas/Money'
     AdminAPIGetListableTaskResponse:
       allOf:
         - $ref: '#/components/schemas/GetListableTask'
@@ -604,7 +589,6 @@ components:
             last_modified_by:
               type: string
               description: "Last modifier identifier."
-
     AdminAPIGetTaskByIdResponse:
       allOf:
         - $ref: '#/components/schemas/GetTaskResponse'
@@ -616,10 +600,6 @@ components:
             last_modified_by:
               type: string
               description: "Last modifier identifier."
-
-    ###########################################################
-    # ZALANDO-STYLE PAGINATION SPECIALIZATIONS
-    ###########################################################
     ResponsePageOfOffer:
       allOf:
         - $ref: '#/components/schemas/ResponsePage'
@@ -630,7 +610,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/GetOfferResponse'
-
     ResponsePageOfListableTask:
       allOf:
         - $ref: '#/components/schemas/ResponsePage'
@@ -641,7 +620,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/GetListableTask'
-
     ResponsePageOfAdminAPIGetUserResponse:
       allOf:
         - $ref: '#/components/schemas/ResponsePage'
@@ -652,7 +630,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminAPIGetUserResponse'
-
     ResponsePageOfAdminAPIGetListableTaskResponse:
       allOf:
         - $ref: '#/components/schemas/ResponsePage'
@@ -663,23 +640,108 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminAPIGetListableTaskResponse'
-
-# -------------------------------------------------------------------
-# GLOBAL SECURITY: operations can use 'public' OR 'private'
-# -------------------------------------------------------------------
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri-reference
+          description: >
+            A URI reference that uniquely identifies the problem type only in the
+            context of the provided API. Opposed to the specification in RFC-9457,
+            it is neither recommended to be dereferenceable and point to a
+            human-readable documentation nor globally unique for the problem type.
+          default: 'about:blank'
+          example: '/some/uri-reference'
+        title:
+          type: string
+          description: >
+            A short summary of the problem type. Written in English and readable
+            for engineers, usually not suited for non technical stakeholders and
+            not localized.
+          example: some title for the error situation
+        status:
+          type: integer
+          format: int32
+          description: >
+            The HTTP status code generated by the origin server for this occurrence
+            of the problem.
+          minimum: 100
+          maximum: 600
+          exclusiveMaximum: true
+        detail:
+          type: string
+          description: >
+            A human readable explanation specific to this occurrence of the
+            problem that is helpful to locate the problem and give advice on how
+            to proceed. Written in English and readable for engineers, usually not
+            suited for non technical stakeholders and not localized.
+          example: some description for the error situation
+        instance:
+          type: string
+          format: uri-reference
+          description: >
+            A URI reference that identifies the specific occurrence of the problem,
+            e.g. by adding a fragment identifier or sub-path to the problem type.
+            May be used to locate the root of this problem in the source code.
+          example: '/some/uri-reference#specific-occurrence-context'
+  examples:
+    MinimumAgeConstraintViolation:
+      summary: Whenever the specified age (birthdate) is not match the minimum requirement
+      value:
+        type: /problems/constraint-violation/birthdate/minimum
+        title: Constraint Violation
+        status: 422
+        detail: Birthdate must match the minimum requirement
+        instance: /problems/constraint-violation/birthdate/minimum/traceId
+    UnrecognizableLivesInConstraintViolation:
+      summary: Whenever the specified lives_in location is not supported
+      value:
+        type: /problems/constraint-violation/lives_in/unrecognized
+        title: Constraint Violation
+        status: 422
+        detail: Specified lives_in not supported.
+        instance: /problems/constraint-violation/lives_in/unrecognized/traceId
+    UnsupportedMobileNumber:
+      summary: Whenever the specified Contact phone number is not supported
+      value:
+        type: /problems/constraint-violation/contact/mobile-not-supported
+        title: Constraint Violation
+        status: 422
+        detail: Specified contact is not supported.
+        instance: /problems/constraint-violation/contact/mobile-not-supported/traceId
+    UnsupportedEmail:
+      summary: Whenever the specified Contact email is not supported
+      value:
+        type: /problems/constraint-violation/contact/email-not-supported
+        title: Constraint Violation
+        status: 422
+        detail: Specified contact is not supported.
+        instance: /problems/constraint-violation/contact/email-not-supported/traceId
+    LastNameNotSupported:
+      summary: Whenever the specified last name is not supported
+      value:
+        type: /problems/constraint-violation/last_name/not-supported
+        title: Constraint Violation
+        status: 422
+        detail: Specified last_name is not supported.
+        instance: /problems/constraint-violation/last_name/not-supported
+    FirstNameNotSupported:
+      summary: Whenever the specified first name is not supported
+      value:
+        type: /problems/constraint-violation/first_name/not-supported
+        title: Constraint Violation
+        status: 422
+        detail: Specified first_name is not supported.
+        instance: /problems/constraint-violation/first_name/not-supported
 security:
   - public: []
   - private: []
-
 paths:
-
-  ######################################################################
-  # PUBLIC API
-  ######################################################################
   /health:
     get:
       tags:
-        - PUBLIC
+        - SYSTEM-API
       summary: Health check
       description: Returns the current health status of the service.
       security:
@@ -697,15 +759,13 @@ paths:
                     description: "Possible values: HEALTHY, UNHEALTHY."
         '503':
           $ref: '#/components/responses/Problem503'
-
   /users:
     post:
       tags:
-        - USER
-      summary: Create a new user
-      description: Public endpoint to create a user.
-      security:
-        - public: []
+        - PUBLIC-API
+      operationId: CreateUser
+      summary: Creates a User
+      description: Allows the registration of an User.
       requestBody:
         required: true
         content:
@@ -715,31 +775,80 @@ paths:
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: ["OK"]
         '400':
           $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
-        '404':
-          $ref: '#/components/responses/Problem404'
         '409':
-          $ref: '#/components/responses/Problem409'
+          description: Whenever the username or contact is not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                UsernameNotAvailable:
+                  summary: Whenever the specified username is not available
+                  value:
+                    type: /problems/username/not-available
+                    title: Username not available
+                    status: 409
+                    detail: The specified username is not available
+                    instance: /problems/username/not-available/traceId
+                ContactNotAvailable:
+                  summary: Whenever the specified contact is not available
+                  value:
+                    type: /problems/contact/not-available
+                    title: Contact not available
+                    status: 409
+                    detail: The specified contact is not available
+                    instance: /problems/contact/not-available/traceId
         '422':
-          $ref: '#/components/responses/Problem422'
+          description: Whenever validation fails
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                MinimumAgeConstraintViolation:
+                  $ref: '#/components/examples/MinimumAgeConstraintViolation'
+                UnrecognizableLivesInConstraintViolation:
+                  $ref: '#/components/examples/UnrecognizableLivesInConstraintViolation'
+                UnsupportedMobileNumber:
+                  $ref: '#/components/examples/UnsupportedMobileNumber'
+                UnsupportedEmail:
+                  $ref: '#/components/examples/UnsupportedEmail'
+                LastNameNotSupported:
+                  $ref: '#/components/examples/LastNameNotSupported'
+                FirstNameNotSupported:
+                  $ref: '#/components/examples/FirstNameNotSupported'
+                UsernameNotSupported:
+                  summary: Whenever the specified username is not supported
+                  value:
+                    type: /problems/constraint-violation/username/not-supported
+                    title: Constraint Violation
+                    status: 422
+                    detail: Specified username is not supported.
+                    instance: /problems/constraint-violation/username/not-supported
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
-
   /offers:
     get:
       tags:
-        - OFFER
+        - PUBLIC-API
       summary: List available offers
       description: Returns a list of available offers.
-      security:
-        - public: []
       parameters:
         - name: cursor
           in: query
@@ -750,6 +859,7 @@ paths:
           in: query
           schema:
             type: integer
+            default: 25
           description: "Number of items per page."
       responses:
         '200':
@@ -758,31 +868,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResponsePageOfOffer'
-        '204':
-          description: No offers found.
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
-        '404':
-          $ref: '#/components/responses/Problem404'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
-
-  ######################################################################
-  # SIGNED USER API
-  ######################################################################
   /users/self:
     get:
       tags:
-        - USER
+        - PUBLIC-API
       summary: Retrieve current user's data
       description: Requires authentication (private)
       security:
         - private:
-          - "user:read"
+            - "user:read"
       responses:
         '200':
           description: OK. User data.
@@ -804,15 +906,14 @@ paths:
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
-
     patch:
       tags:
-        - USER
+        - PUBLIC-API
       summary: Partially update current user's data
       description: Requires authentication (private)
       security:
         - private:
-          - "user:write"
+            - "user:write"
       requestBody:
         required: true
         content:
@@ -836,17 +937,15 @@ paths:
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
-
   /users/self/contacts:
     post:
       tags:
-        - USER
-        - CONTACT
+        - PUBLIC-API
       summary: Create a new contact for the current user
       description: Requires authentication (private)
       security:
         - private:
-          - "contact:write"
+            - "contact:write"
       requestBody:
         required: true
         content:
@@ -882,13 +981,12 @@ paths:
   /users/self/contacts/verify:
     post:
       tags:
-        - USER
-        - CONTACT
+        - PUBLIC-API
       summary: Verify one of the user's contacts
       description: Requires authentication (private)
       security:
         - private:
-          - "contact:verify"
+            - "contact:verify"
       requestBody:
         required: true
         content:
@@ -920,13 +1018,12 @@ paths:
   /users/self/contacts/{id}:
     delete:
       tags:
-        - USER
-        - CONTACT
+        - PUBLIC-API
       summary: Delete a specific contact from the current user
       description: Requires authentication (private)
       security:
         - private:
-          - "contact:delete"
+            - "contact:delete"
       parameters:
         - name: id
           in: path
@@ -955,12 +1052,12 @@ paths:
   /tasks:
     post:
       tags:
-        - TASK
+        - PUBLIC-API
       summary: Create a new task
       description: Requires authentication (private)
       security:
         - private:
-          - "task:write"
+            - "task:write"
       requestBody:
         required: true
         content:
@@ -990,15 +1087,14 @@ paths:
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
-
     get:
       tags:
-        - TASK
+        - PUBLIC-API
       summary: List all tasks for the current user
       description: Requires authentication (private).
       security:
         - private:
-          - "task:read"
+            - "task:read"
       parameters:
         - name: cursor
           in: query
@@ -1033,12 +1129,12 @@ paths:
   /tasks/{id}:
     get:
       tags:
-        - TASK
+        - PUBLIC-API
       summary: Retrieve a specific task by ID
       description: Requires authentication (private)
       security:
         - private:
-          - "task:read"
+            - "task:read"
       parameters:
         - name: id
           in: path
@@ -1087,15 +1183,14 @@ paths:
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
-
     patch:
       tags:
-        - TASK
+        - PUBLIC-API
       summary: Partially update a task
       description: Requires authentication (private)
       security:
         - private:
-          - "task:write"
+            - "task:write"
       parameters:
         - name: id
           in: path
@@ -1130,15 +1225,14 @@ paths:
           $ref: '#/components/responses/Problem500'
         '503':
           $ref: '#/components/responses/Problem503'
-
     delete:
       tags:
-        - TASK
+        - PUBLIC-API
       summary: Delete a task
       description: Requires authentication (private)
       security:
         - private:
-          - "task:delete"
+            - "task:delete"
       parameters:
         - name: id
           in: path
@@ -1165,13 +1259,12 @@ paths:
   /users/self/subscriptions:
     post:
       tags:
-        - USER
-        - SUBSCRIPTION
+        - PUBLIC-API
       summary: Create a new subscription for the current user
       description: Requires authentication (private)
       security:
         - private:
-          - "subscription:write"
+            - "subscription:write"
       requestBody:
         required: true
         content:
@@ -1207,7 +1300,7 @@ paths:
           content:
             application/problem+json:
               schema:
-                $ref: 'https://opensource.zalando.com/restful-api-guidelines/models/problem-1.0.1.yaml#/Problem'
+                $ref: '#/components/schemas/Problem'
         '409':
           $ref: '#/components/responses/Problem409'
         '422':
@@ -1220,13 +1313,12 @@ paths:
   /users/self/subscriptions/latest:
     get:
       tags:
-        - USER
-        - SUBSCRIPTION
+        - PUBLIC-API
       summary: Retrieve the latest subscription of the current user
       description: Requires authentication (private).
       security:
         - private:
-          - "subscription:read"
+            - "subscription:read"
       responses:
         '200':
           description: OK. Latest subscription.
@@ -1249,19 +1341,15 @@ paths:
         '503':
           $ref: '#/components/responses/Problem503'
 
-  ######################################################################
-  # ADMIN API
-  ######################################################################
   /admin/users:
     get:
       tags:
-        - USER
-        - ADMIN
+        - PRIVATE-API
       summary: List users (admin)
       description: Requires role=ADMIN and scope, e.g. admin:read.
       security:
         - private:
-          - "admin:read"
+            - "admin:read"
       x-role:
         - ADMIN
       parameters:
@@ -1313,13 +1401,12 @@ paths:
   /admin/users/{id}:
     get:
       tags:
-        - USER
-        - ADMIN
+        - PRIVATE-API
       summary: Retrieve details of a specific user (admin)
       description: Requires role=ADMIN and scope admin:read.
       security:
         - private:
-          - "admin:read"
+            - "admin:read"
       x-role:
         - ADMIN
       parameters:
@@ -1351,13 +1438,12 @@ paths:
 
     patch:
       tags:
-        - USER
-        - ADMIN
+        - PRIVATE-API
       summary: Partially update a user (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
         - private:
-          - "admin:write"
+            - "admin:write"
       x-role:
         - ADMIN
       parameters:
@@ -1395,13 +1481,12 @@ paths:
 
     delete:
       tags:
-        - USER
-        - ADMIN
+        - PRIVATE-API
       summary: Delete a user (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
         - private:
-          - "admin:write"
+            - "admin:write"
       x-role:
         - ADMIN
       parameters:
@@ -1430,13 +1515,12 @@ paths:
   /admin/users/{id}/contacts/{key}:
     delete:
       tags:
-        - USER
-        - ADMIN
+        - PRIVATE-API
       summary: Delete a contact from a user (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
         - private:
-          - "admin:write"
+            - "admin:write"
       x-role:
         - ADMIN
       parameters:
@@ -1471,14 +1555,12 @@ paths:
   /admin/subscriptions:
     post:
       tags:
-        - USER
-        - SUBSCRIPTION
-        - ADMIN
+        - PRIVATE-API
       summary: Create multiple subscriptions (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
         - private:
-          - "admin:write"
+            - "admin:write"
       x-role:
         - ADMIN
       requestBody:
@@ -1541,14 +1623,12 @@ paths:
   /admin/subscriptions/{id}:
     get:
       tags:
-        - USER
-        - SUBSCRIPTION
-        - ADMIN
+        - PRIVATE-API
       summary: Retrieve a subscription by ID (admin)
       description: Requires role=ADMIN and scope admin:read.
       security:
         - private:
-          - "admin:read"
+            - "admin:read"
       x-role:
         - ADMIN
       parameters:
@@ -1582,14 +1662,12 @@ paths:
 
     delete:
       tags:
-        - USER
-        - SUBSCRIPTION
-        - ADMIN
+        - PRIVATE-API
       summary: Delete a subscription (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
         - private:
-          - "admin:write"
+            - "admin:write"
       x-role:
         - ADMIN
       parameters:
@@ -1620,13 +1698,12 @@ paths:
   /admin/offers:
     post:
       tags:
-        - OFFER
-        - ADMIN
+        - PRIVATE-API
       summary: Create offers (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
         - private:
-          - "admin:write"
+            - "admin:write"
       x-role:
         - ADMIN
       requestBody:
@@ -1673,13 +1750,12 @@ paths:
   /admin/offers/{id}:
     get:
       tags:
-        - OFFER
-        - ADMIN
+        - PRIVATE-API
       summary: Get an offer by ID (admin)
       description: Requires role=ADMIN and scope admin:read.
       security:
         - private:
-          - "admin:read"
+            - "admin:read"
       x-role:
         - ADMIN
       parameters:
@@ -1713,13 +1789,12 @@ paths:
 
     patch:
       tags:
-        - OFFER
-        - ADMIN
+        - PRIVATE-API
       summary: Partially update an offer (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
         - private:
-          - "admin:write"
+            - "admin:write"
       x-role:
         - ADMIN
       parameters:
@@ -1759,13 +1834,12 @@ paths:
 
     delete:
       tags:
-        - OFFER
-        - ADMIN
+        - PRIVATE-API
       summary: Delete an offer (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
         - private:
-          - "admin:write"
+            - "admin:write"
       x-role:
         - ADMIN
       parameters:
@@ -1796,13 +1870,12 @@ paths:
   /admin/users/{id}/tasks:
     get:
       tags:
-        - TASK
-        - ADMIN
+        - PRIVATE-API
       summary: List tasks for a specific user (admin)
       description: Requires role=ADMIN and scope admin:read.
       security:
         - private:
-          - "admin:read"
+            - "admin:read"
       x-role:
         - ADMIN
       parameters:
@@ -1855,13 +1928,12 @@ paths:
   /admin/users/{id}/tasks/{key}:
     get:
       tags:
-        - TASK
-        - ADMIN
+        - PRIVATE-API
       summary: Retrieve details of a specific task for a user (admin)
       description: Requires role=ADMIN and scope admin:read.
       security:
         - private:
-          - "admin:read"
+            - "admin:read"
       x-role:
         - ADMIN
       parameters:
@@ -1899,13 +1971,12 @@ paths:
 
     delete:
       tags:
-        - TASK
-        - ADMIN
+        - PRIVATE-API
       summary: Delete a specific task for a user (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
         - private:
-          - "admin:write"
+            - "admin:write"
       x-role:
         - ADMIN
       parameters:
