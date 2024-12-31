@@ -1830,15 +1830,13 @@ paths:
 
   /admin/users/{id}/contacts/{key}:
     delete:
-      tags:
-        - PRIVATE-API
-      summary: Delete a contact from a user (admin)
-      description: Requires role=ADMIN and scope admin:write.
+      tags: [ "PRIVATE-API" ]
+      summary: Delete a contact from a user
+      description: Deletes a contact from the specified User
       security:
-        - private:
-            - "admin:write"
-      x-role:
-        - ADMIN
+        - private: [ "user:write" ]
+      x-role: [ "USER_MANAGER" ]
+      operationId: DeleteUserContactByUserIdAndContactId
       parameters:
         - name: id
           in: path
@@ -1852,6 +1850,8 @@ paths:
           description: "Contact key to delete."
           schema:
             type: string
+        - $ref: "#/components/parameters/TicketSystem"
+        - $ref: "#/components/parameters/TicketId"
       responses:
         '204':
           description: No Content. Contact deleted.
@@ -1862,7 +1862,16 @@ paths:
         '403':
           $ref: '#/components/responses/Problem403'
         '404':
-          $ref: '#/components/responses/Problem404'
+          description: Whenever User or Contact doesn't exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                UserDoesNotExist:
+                  $ref: '#/components/examples/UserDoesNotExist'
+                ContactDoesNotExist:
+                  $ref: '#/components/examples/ContactDoesNotExist'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -2013,6 +2022,9 @@ paths:
         - private: [ "offer:write" ]
       x-role: [ "OFFER_MANAGER" ]
       operationId: CreateOffers
+      parameters:
+        - $ref: "#/components/parameters/TicketSystem"
+        - $ref: "#/components/parameters/TicketId"
       requestBody:
         required: true
         content:
@@ -2028,7 +2040,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CreateOfferResponse"
-                examples:
+              examples:
+                Sample:
                   $ref: "#/components/examples/CreateOfferResponse"
         '400':
           $ref: '#/components/responses/Problem400'
@@ -2045,8 +2058,7 @@ paths:
 
   /admin/offers/{id}:
     get:
-      tags:
-        - PRIVATE-API
+      tags: [ "PRIVATE-API" ]
       summary: Get an offer by ID
       description: Returns the specified offer
       security:
@@ -2059,13 +2071,14 @@ paths:
           description: "Offer ID."
           schema:
             type: string
+      operationId: GetOfferById
       responses:
         '200':
           description: OK. Offer details.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdminAPIUpdateOfferByIdRequest'
+                $ref: '#/components/schemas/AdminAPIGetOfferByIdResponse'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
