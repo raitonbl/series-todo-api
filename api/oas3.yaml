@@ -1197,7 +1197,7 @@ paths:
                 $ref: '#/components/schemas/Problem'
               examples:
                 TaskNameNotSupported:
-                  $ref: '#/components/examples/TaskLabelNotSupported'
+                  $ref: '#/components/examples/TaskNameNotSupported'
                 TaskDescriptionNotSupported:
                   $ref: '#/components/examples/TaskDescriptionNotSupported'
                 TaskLabelNotSupported:
@@ -1334,7 +1334,7 @@ paths:
                 $ref: '#/components/schemas/Problem'
               examples:
                 TaskNameNotSupported:
-                  $ref: '#/components/examples/TaskLabelNotSupported'
+                  $ref: '#/components/examples/TaskNameNotSupported'
                 TaskDescriptionNotSupported:
                   $ref: '#/components/examples/TaskDescriptionNotSupported'
                 TaskLabelNotSupported:
