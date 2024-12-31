@@ -725,7 +725,7 @@ components:
             e.g. by adding a fragment identifier or sub-path to the problem type.
             May be used to locate the root of this problem in the source code.
           example: '/some/uri-reference#specific-occurrence-context'
-    CreateOfferResponse:
+    BulkOperationResponse:
       type: array
       items:
         type: object
@@ -913,7 +913,7 @@ components:
           description: Offer successfully created
         - id: 7c51b950-72e8-42c1-a7ea-32df3c7bdcb3
           status: NOT_CREATED
-          description: Cannot created Offer due to validation issues
+          description: Cannot create Offer due to validation issues
           problem:
             type: /problems/constraint-violation/price/amount/negative
             title: Constraint Violation
@@ -922,7 +922,7 @@ components:
             instance: /problems/constraint-violation/price/amount/negative
         - id: ffcb70af-8d1f-4e0d-988c-79f93a955143
           status: NOT_CREATED
-          description: Cannot created Offer due to validation issues
+          description: Cannot create Offer due to validation issues
           problem:
             type: /problems/constraint-violation/price/currency/not-supported
             title: Constraint Violation
@@ -931,7 +931,7 @@ components:
             instance: /problems/constraint-violation/price/currency/not-supported
         - id: 3c3b3cdf-09cd-488c-b1ef-346ba9a1779e
           status: NOT_CREATED
-          description: Cannot created Offer due to validation issues
+          description: Cannot create Offer due to validation issues
           problem:
             type: /problems/constraint-violation/expires_at/invalid-date
             title: Constraint Violation
@@ -940,14 +940,55 @@ components:
             instance: /problems/constraint-violation/expires_at/invalid-date
         - id: 0a0eb143-8b02-4579-8ca0-fc8605abb575
           status: NOT_CREATED
-          description: Cannot created Offer due to validation issues
+          description: Cannot create Offer due to validation issues
           problem:
             type: /problems/constraint-violation/max_number_of_tasks/exceeded
             title: Constraint Violation
             status: 422
             detail: The specified max_number_of_tasks exceeds the allowed limit.
             instance: /problems/constraint-violation/max_number_of_tasks/exceeded
-
+    CreateSubscriptionResponse:
+      summary: A Generic Response
+      value:
+        - id: ecbfb414-cc26-46b8-b5ce-edce161d3e44
+          status: CREATED
+          description: Subscription successfully created
+        - id: 7c51b950-72e8-42c1-a7ea-32df3c7bdcb3
+          status: NOT_CREATED
+          description: Cannot create Subscription due to validation issues
+          problem:
+            type: /problems/subscription/offer-not-available
+            title: Unprocessable Entity
+            status: 422
+            detail: The specified offer isn't available to subscribe to
+            instance: /problems/subscription/offer-not-available/$traceId
+        - id: ffcb70af-8d1f-4e0d-988c-79f93a955143
+          status: NOT_CREATED
+          description: Cannot create Subscription due to validation issues
+          problem:
+            type: /problems/subscription/contact-not-found
+            title: Unprocessable Entity
+            status: 422
+            detail: The specified contact does not exist or doesn't belong to the User.
+            instance: /problems/subscription/contact-not-found/$traceId
+        - id: 3c3b3cdf-09cd-488c-b1ef-346ba9a1779e
+          status: NOT_CREATED
+          description: Cannot create Subscription due to validation issues
+          problem:
+            type: /problems/subscription/contact-kind-not-supported
+            title: Unprocessable Entity
+            status: 422
+            detail: The specified contact kind does not allow payments to occur
+            instance: /problems/subscription/contact-kind-not-supported/$traceId
+        - id: 0a0eb143-8b02-4579-8ca0-fc8605abb575
+          status: NOT_CREATED
+          description: Cannot create Subscription due to validation issues
+          problem:
+            type: /problems/subscription/contact-not-verified
+            title: Unprocessable Entity
+            status: 422
+            detail: The specified contact isn't verified therefore cannot be used to make payment
+            instance: /problems/subscription/contact-not-verified/$traceId
 security:
   - public: [ "user:read" ]
   - private: [ ]
@@ -1879,15 +1920,15 @@ paths:
 
   /admin/subscriptions:
     post:
-      tags:
-        - PRIVATE-API
+      tags: ["PRIVATE-API"]
       summary: Create multiple subscriptions (admin)
       description: Requires role=ADMIN and scope admin:write.
       security:
-        - private:
-            - "admin:write"
-      x-role:
-        - ADMIN
+        - private: [ "user:write","subscription:write" ]
+      x-role: [ "USER_MANAGER" ]
+      parameters:
+        - $ref: "#/components/parameters/TicketSystem"
+        - $ref: "#/components/parameters/TicketId"
       requestBody:
         required: true
         content:
@@ -1918,28 +1959,16 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: string
-                    status:
-                      type: string
-                    description:
-                      type: string
-                    type:
-                      type: string
+                $ref: "#/components/schemas/BulkOperationResponse"
+              examples:
+                Sample:
+                  $ref: "#/components/examples/CreateSubscriptionResponse"
         '400':
           $ref: '#/components/responses/Problem400'
         '401':
           $ref: '#/components/responses/Problem401'
         '403':
           $ref: '#/components/responses/Problem403'
-        '404':
-          $ref: '#/components/responses/Problem404'
-        '422':
-          $ref: '#/components/responses/Problem422'
         '500':
           $ref: '#/components/responses/Problem500'
         '503':
@@ -2039,7 +2068,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreateOfferResponse"
+                $ref: "#/components/schemas/BulkOperationResponse"
               examples:
                 Sample:
                   $ref: "#/components/examples/CreateOfferResponse"
