@@ -3,6 +3,12 @@ info:
   title: Core Service API
   description: A simple API to manage tasks.
   version: 1.0.0
+  contact:
+    name: RaitonBL
+    url: raitonbl.com
+  license:
+    name: Apache License, Version 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html#apache-license-version-20
 tags:
   - name: CONSUMER API
     description: operations that manages User and Task from the perspective of a regular User.
