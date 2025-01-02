@@ -20,10 +20,10 @@ components:
   securitySchemes:
     public:
       type: openIdConnect
-      openIdConnectUrl: https://example.com/public/.well-known/openid-configuration
+      openIdConnectUrl: https://sso.raitonbl.com/.well-known/openid-configuration
     private:
       type: openIdConnect
-      openIdConnectUrl: https://example.com/private/.well-known/openid-configuration
+      openIdConnectUrl: https://auth.raitonbl.com/.well-known/openid-configuration
   responses:
     TaskNotFound:
       description: Whenever Task does not exist
