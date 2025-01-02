@@ -998,8 +998,7 @@ security:
 paths:
   /health:
     get:
-      tags:
-        - SYSTEM-API
+      tags: [ "SYSTEM-API" ]
       summary: Health check
       description: Returns the current health status of the service.
       operationId: GetSystemHealth
@@ -1011,16 +1010,19 @@ paths:
               schema:
                 type: object
                 properties:
-                  status:
+                  liveness:
                     type: string
-                    enum: ["HEALTHY","UNHEALTHY"]
+                    enum: [ "HEALTHY","UNHEALTHY" ]
+                    description: "Possible values: HEALTHY, UNHEALTHY."
+                  readiness:
+                    type: string
+                    enum: [ "READY","BOOTSTRAPPING","NOT-READY" ]
                     description: "Possible values: HEALTHY, UNHEALTHY."
         '503':
           $ref: '#/components/responses/Problem503'
   /users:
     post:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: CreateUser
       summary: Creates a User
       description: Allows the registration of an User.
@@ -1103,8 +1105,7 @@ paths:
           $ref: '#/components/responses/Problem503'
   /offers:
     get:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: ListOffers
       summary: List available offers
       description: Returns a list of available offers.
@@ -1137,8 +1138,7 @@ paths:
           $ref: '#/components/responses/Problem503'
   /users/self:
     get:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: GetCurrentUserInformation
       summary: Retrieve current user's data
       description: Returns the current user's data
@@ -1160,8 +1160,7 @@ paths:
         '503':
           $ref: '#/components/responses/Problem503'
     patch:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: UpdateCurrentUserInformation
       summary: Partially Update the current User data
       description: Updates current user data
@@ -1213,8 +1212,7 @@ paths:
           $ref: '#/components/responses/Problem503'
   /users/self/contacts:
     post:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: AddUserContact
       summary: Create a new contact for the current user
       description: Create a new contact for the current user and awaits verification of contact.
@@ -1254,8 +1252,7 @@ paths:
 
   /users/self/contacts/{id}/verify:
     post:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: VerifyCurrentUserContactById
       summary: Verify one of the user's contacts
       description: Verifies a contact that has been created but not verified
@@ -1320,8 +1317,7 @@ paths:
 
   /users/self/contacts/{id}:
     delete:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: DeleteContactById
       summary: Delete a specific contact from the current user
       description: Requires authentication (private)
@@ -1358,8 +1354,7 @@ paths:
 
   /tasks:
     post:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: CreateUserTask
       summary: Create a new task
       description: Create a task on the User board
@@ -1404,8 +1399,7 @@ paths:
         '503':
           $ref: '#/components/responses/Problem503'
     get:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: GetUserTasks
       summary: List tasks for the current user
       description: Returns a page contained tasks that match criteria.
@@ -1454,8 +1448,7 @@ paths:
 
   /tasks/{id}:
     get:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: GetUserTaskById
       summary: Retrieve a specific task by ID
       description: Returns a specific task for the user
@@ -1486,8 +1479,7 @@ paths:
         '503':
           $ref: '#/components/responses/Problem503'
     patch:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: UpdateUserTaskById
       summary: Partially update a task
       description: Updates a task
@@ -1543,8 +1535,7 @@ paths:
         '503':
           $ref: '#/components/responses/Problem503'
     delete:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       summary: Delete a task
       operationId: DeleteUserTaskById
       description: Deletes permanently a task
@@ -1573,8 +1564,7 @@ paths:
 
   /users/self/subscriptions:
     post:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: CreateUserSubscription
       summary: Create a new subscription for the current user
       description: Create a subscription for the current user if no subscription is in effect
@@ -1677,8 +1667,7 @@ paths:
 
   /users/self/subscriptions/latest:
     get:
-      tags:
-        - PUBLIC-API
+      tags: [ "PUBLIC-API" ]
       operationId: GetCurrentUserSubscription
       summary: Retrieve the latest subscription of the current user
       description: Returns the current subscription of the current user
@@ -1841,8 +1830,7 @@ paths:
           $ref: '#/components/responses/Problem503'
 
     delete:
-      tags:
-        - PRIVATE-API
+      tags: [ "PRIVATE-API" ]
       summary: Delete a user
       description: Deletes the specified User
       security:
@@ -1923,7 +1911,7 @@ paths:
 
   /admin/subscriptions:
     post:
-      tags: ["PRIVATE-API"]
+      tags: [ "PRIVATE-API" ]
       summary: Create multiple subscriptions
       description: Creates subscription in bulk
       security:
@@ -2047,8 +2035,7 @@ paths:
 
   /admin/offers:
     post:
-      tags:
-        - PRIVATE-API
+      tags: [ "PRIVATE-API" ]
       summary: Creates offers
       description: Create a bulk of Offers
       security:
@@ -2124,8 +2111,7 @@ paths:
           $ref: '#/components/responses/Problem503'
 
     patch:
-      tags:
-        - PRIVATE-API
+      tags: [ "PRIVATE-API" ]
       summary: Partially update an offer
       description: Updates the specified offer
       security:
@@ -2216,8 +2202,7 @@ paths:
           $ref: '#/components/responses/Problem503'
   /admin/users/{id}/tasks:
     get:
-      tags:
-        - PRIVATE-API
+      tags: [ "PRIVATE-API" ]
       operationId: GetUserTasksById
       summary: List tasks for a specific user
       description: Returns a page of user tasks
