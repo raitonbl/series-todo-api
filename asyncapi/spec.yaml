@@ -2,16 +2,212 @@ asyncapi: 3.0.0
 info:
   title: Core Service API
   version: 1.0.0
-  description: A simple API to manage tasks.
+  description: >
+    This AsyncAPI specification defines a core service responsible for managing
+    user-related tasks such as creating OIDC users and deleting application users.
+    It leverages Redis (secured with username/password) as a messaging channel
+    to exchange commands in a loosely-coupled, event-driven architecture.
   contact:
     name: RaitonBL
     url: https://raitonbl.com
   license:
     name: Apache License, Version 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html#apache-license-version-20
-servers: { }
+
+servers:
+  valkey:
+    host: valkey.raitonbl.com
+    protocol: rediss
+    description: >
+      A secured Valkey instance (Redis over TLS) requiring user/password authentication
+      for sending and receiving messages.
+    security:
+      - type: userPassword
+
+defaultContentType: application/json
+
+channels:
+  createOidcUserQueue:
+    address: "CreateOidcUserQueue"
+    description: >
+      Queue used for sending and receiving commands to create OIDC users.
+    messages:
+      createOidcUserCommand:
+        $ref: "#/components/messages/createOidcUserCommand"
+    servers:
+      - $ref: "#/servers/valkey"
+    bindings:
+      redis: {}
+
+  deleteAppUserQueue:
+    address: "DeleteOidcUserStatusQueue"
+    description: >
+      Queue used for sending and receiving commands to delete application users.
+    messages:
+      deleteUserCommand:
+        $ref: "#/components/messages/deleteUserCommand"
+    servers:
+      - $ref: "#/servers/valkey"
+    bindings:
+      redis: {}
+operations:
+  sendCreateOidcUserCommand:
+    summary: Sends a command to create an OIDC User
+    description: >
+      Dispatched whenever a new user is registered in the system. This command
+      instructs the system to provision a new OIDC user account.
+    action: send
+    channel:
+      $ref: "#/channels/createOidcUserQueue"
+    tags:
+      - $ref: "#/components/tags/OIDC"
+  onCreateOidcUserCommand:
+    summary: Receives a command to create an OIDC User
+    description: >
+      Consumes a message instructing the creation of a new OIDC user. Upon
+      receiving, it attempts to create the user in the OIDC provider or
+      relevant system.
+    action: receive
+    channel:
+      $ref: "#/channels/createOidcUserQueue"
+    tags:
+      - $ref: "#/components/tags/OIDC"
+  sendDeleteApplicationUserCommand:
+    summary: Sends a command to delete an Application User
+    description: >
+      Dispatched whenever an operation to remove an application user is triggered.
+      This command instructs the system to remove the user's data and revoke
+      any associated resources.
+    action: send
+    channel:
+      $ref: "#/channels/deleteAppUserQueue"
+    tags:
+      - $ref: "#/components/tags/User"
+  onDeleteApplicationUserCommand:
+    summary: Receives a command to delete an Application User
+    description: >
+      Consumes a message instructing the deletion of an application user. Upon
+      receiving, it attempts to remove all associated user data from the system.
+    action: receive
+    channel:
+      $ref: "#/channels/deleteAppUserQueue"
+    tags:
+      - $ref: "#/components/tags/OIDC"
+      - $ref: "#/components/tags/User"
 components:
-  tags: { }
-  parameters: { }
-channels: { }
-operations: { }
+  tags:
+    OIDC:
+      name: "OIDC"
+      description: >
+        Describes operations and commands related to OpenID Connect (OIDC)
+        user objects and management.
+    User:
+      name: "User"
+      description: >
+        Describes operations and commands related to general Application User
+        management.
+
+  schemas:
+    message:
+      type: object
+      description: >
+        A generic message wrapper that carries both metadata and a typed `data`
+        payload. This wrapper provides standard properties such as an identifier,
+        version, timestamps, and additional metadata.
+      properties:
+        id:
+          type: string
+          description: >
+            A unique identifier for this message instance.
+        dataType:
+          type: string
+          description: >
+            Identifies the type or category of data carried in the `data` field.
+        version:
+          type: string
+          description: >
+            A version identifier for the structure of the message payload.
+        time:
+          type: string
+          format: date-time
+          description: >
+            The timestamp indicating when the message was created or dispatched.
+        metadata:
+          type: object
+          description: >
+            Additional data for tracing, correlation, or labeling the message
+            context.
+          properties:
+            triggeredBy:
+              type: object
+              description: >
+                Information about the entity or process that triggered this message.
+              properties:
+                system:
+                  type: string
+                  description: >
+                    The system or microservice name responsible for creating this message.
+                operationId:
+                  type: string
+                  description: >
+                    A unique ID correlating to a specific transaction or operation.
+            labels:
+              type: object
+              description: >
+                Key-value pairs for labeling or categorizing the message.
+              additionalProperties:
+                type: string
+        data:
+          description: >
+            The actual payload of the message (type T). This field is extended
+            by specific commands or event data structures.
+          type: object
+
+    createOidcUserData:
+      type: object
+      description: >
+        Payload representing details needed to create an OIDC user.
+      properties:
+        id:
+          type: string
+          description: >
+            A unique identifier for the user to be created in the OIDC system.
+      required:
+        - id
+
+    deleteUserData:
+      type: object
+      description: >
+        Payload representing details needed to delete an application user.
+      properties:
+        id:
+          type: string
+          description: >
+            A unique identifier for the user to be removed from the application.
+      required:
+        - id
+  messages:
+    createOidcUserCommand:
+      name: createOidcUserCommand
+      title: Create OIDC User Command
+      description: >
+        Command message instructing the system to create a new OIDC user account.
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/message'
+          - type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/createOidcUserData'
+    deleteUserCommand:
+      name: deleteUserCommand
+      title: Delete User Command
+      description: >
+        Command message instructing the system to delete an existing application user.
+      payload:
+        allOf:
+          - $ref: '#/components/schemas/message'
+          - type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/deleteUserData'
