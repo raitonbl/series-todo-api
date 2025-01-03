@@ -19,8 +19,8 @@ servers:
     host: valkey.raitonbl.com
     protocol: rediss
     description: >
-      A secured Valkey instance (Redis over TLS) requiring user/password authentication
-      for sending and receiving messages.
+      A secured Valkey instance (Redis over TLS) requiring user/password
+      authentication for sending and receiving messages.
     security:
       - type: userPassword
 
@@ -38,7 +38,6 @@ channels:
       - $ref: "#/servers/valkey"
     bindings:
       redis: {}
-
   deleteAppUserQueue:
     address: "DeleteOidcUserStatusQueue"
     description: >
@@ -106,14 +105,13 @@ components:
       description: >
         Describes operations and commands related to general Application User
         management.
-
   schemas:
     message:
       type: object
       description: >
         A generic message wrapper that carries both metadata and a typed `data`
         payload. This wrapper provides standard properties such as an identifier,
-        version, timestamps, and additional metadata.
+        version, timestamps, optional headers, and additional metadata.
       properties:
         id:
           type: string
@@ -135,8 +133,7 @@ components:
         metadata:
           type: object
           description: >
-            Additional data for tracing, correlation, or labeling the message
-            context.
+            Additional data for tracing, correlation, or labeling the message context.
           properties:
             triggeredBy:
               type: object
@@ -162,7 +159,6 @@ components:
             The actual payload of the message (type T). This field is extended
             by specific commands or event data structures.
           type: object
-
     createOidcUserData:
       type: object
       description: >
@@ -174,7 +170,6 @@ components:
             A unique identifier for the user to be created in the OIDC system.
       required:
         - id
-
     deleteUserData:
       type: object
       description: >
@@ -199,6 +194,23 @@ components:
             properties:
               data:
                 $ref: '#/components/schemas/createOidcUserData'
+      examples:
+        - name: createOidcUserCommandExample
+          summary: Example message for creating an OIDC user
+          payload:
+            id: "msg-123456"
+            dataType: "oidc.user.command"
+            version: "1.0"
+            time: "2025-01-03T12:34:56.789Z"
+            metadata:
+              triggeredBy:
+                system: "auth-service"
+                operationId: "op-create-user-001"
+              labels:
+                environment: "production"
+            data:
+              id: "oidc-user-12345"
+
     deleteUserCommand:
       name: deleteUserCommand
       title: Delete User Command
@@ -211,3 +223,19 @@ components:
             properties:
               data:
                 $ref: '#/components/schemas/deleteUserData'
+      examples:
+        - name: deleteUserCommandExample
+          summary: Example message for deleting an application user
+          payload:
+            id: "msg-987654"
+            dataType: "app.user.command"
+            version: "1.0"
+            time: "2025-01-03T12:40:00.000Z"
+            metadata:
+              triggeredBy:
+                system: "user-service"
+                operationId: "op-delete-user-999"
+              labels:
+                environment: "staging"
+            data:
+              id: "app-user-98765"
